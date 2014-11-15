@@ -1,0 +1,11 @@
+description = """isotypes ISO8583 message translator"""
+
+dependencies {
+
+  compile "joda-time:joda-time:2.5"
+  compile "org.joda:joda-money:0.9"
+  compile "commons-beanutils:commons-beanutils:1.9.2"
+  compile "org.apache.commons:commons-collections4:4.0"
+  compile "org.apache.commons:commons-lang3:3.3.2"
+  compile 'com.typesafe:config:1.2.1'
+}

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:iso="http://nulleins.org/schema/iso8583"
+       xsi:schemaLocation="
+	       	http://www.springframework.org/schema/beans
+				http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+			http://nulleins.org/schema/iso8583
+				http://nulleins.org/schema/iso8583-1.1.xsd">
+
+    <iso:schema id="testMessages" bitmapType="binary" contentType="bcd">
+        <iso:description>CIB messages</iso:description>
+
+        <iso:message type="0200" name="Payment Request">
+            <iso:field f="3" name="processingCode" dim="fixed(6)" type="n"/>
+            <iso:field f="4" name="amount" dim="fixed(12)" type="n"/>
+            <iso:field f="11" name="stan" dim="fixed(6)" type="n"/>
+            <iso:field f="22" name="posEntryMode" dim="fixed(4)" type="n"/>
+            <iso:field f="24" name="nii" dim="fixed(4)" type="n"/>
+            <iso:field f="25" name="posCondCode" dim="fixed(2)" type="n"/>
+            <iso:field f="35" name="track2data" dim="llvar(37)" type="z"/>
+            <iso:field f="41" name="catId" dim="fixed(8)" type="an"/>
+            <iso:field f="42" name="merchantId" dim="fixed(15)" type="ans"/>
+            <iso:field f="62" name="privateData" dim="fixed(8)" type="an"/>
+        </iso:message>
+
+    </iso:schema>
+
+</beans>

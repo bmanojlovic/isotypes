@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:iso="http://nulleins.org/schema/iso8583"
+       xsi:schemaLocation="
+	       	http://www.springframework.org/schema/beans
+				http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+			http://nulleins.org/schema/iso8583
+				http://nulleins.org/schema/iso8583-1.1.xsd">
+
+    <iso:schema id="ebcdicTest" header="ISO015000077" bitmapType="hex" contentType="text" charset="cp1047">
+        <iso:description>CIB messages</iso:description>
+
+        <iso:message type="0200" name="Acquirer Payment Request">
+            <iso:field f="2" name="cardNumber" desc="Payment Card Number" dim="llvar(40)" type="n"/>
+            <iso:field f="3" name="processingCode" desc="Processing Code" dim="fixed(6)" type="n"/>
+            <iso:field f="4" name="amount" desc="Amount, transaction (cents)" dim="fixed(12)" type="n"/>
+            <iso:field f="7" name="transDateTime" desc="Transmission Date and Time" dim="fixed(10)" type="date"/>
+            <iso:field f="11" name="stan" desc="System Trace Audit Number" dim="fixed(6)" type="n"/>
+            <iso:field f="12" name="transTimeLocal" desc="Time, local transaction" dim="fixed(6)" type="time"/>
+            <iso:field f="13" name="transDateLocal" desc="Date, local transaction" dim="fixed(4)" type="date"/>
+            <iso:field f="32" name="acquierID" desc="Acquiring Institution ID" dim="llvar(4)" type="n">0000</iso:field>
+            <iso:field f="37" name="extReference" desc="Retrieval Reference Number" dim="fixed(12)" type="n"/>
+            <iso:field f="41" name="cardTermId" desc="Card Acceptor Terminal ID" dim="fixed(16)" type="ans"/>
+            <iso:field f="43" name="cardTermName" desc="Card Acceptor Terminal Name" dim="fixed(40)" type="ans"/>
+            <iso:field f="48" name="msisdn" desc="Additional Data (MSISDN)" dim="llvar(14)" type="n"/>
+            <iso:field f="49" name="currencyCode" desc="Currency Code, Transaction" dim="fixed(3)" type="n"/>
+            <iso:field f="90" name="originalData" desc="Original data elements" dim="lllvar(4)" type="xn"/>
+        </iso:message>
+
+    </iso:schema>
+
+</beans>

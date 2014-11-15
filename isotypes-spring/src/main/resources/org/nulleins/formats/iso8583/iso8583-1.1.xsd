@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns="http://nulleins.org/schema/iso8583"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:beans="http://www.springframework.org/schema/beans"
+            targetNamespace="http://nulleins.org/schema/iso8583" elementFormDefault="qualified"
+            attributeFormDefault="unqualified">
+    <xsd:import namespace="http://www.springframework.org/schema/beans"
+                schemaLocation="http://www.springframework.org/schema/beans/spring-beans-3.1.xsd"/>
+    <xsd:annotation>
+        <xsd:documentation>
+            <![CDATA[
+			ISO8583 Message definition support for Spring context configuration
+			]]>
+        </xsd:documentation>
+    </xsd:annotation>
+    <xsd:element name="schema">
+        <xsd:complexType>
+            <xsd:annotation>
+                <xsd:documentation>
+                    An ISO8583 schema defines the set of message templates that comprise
+                    a specific agreed exchange protocol, as well as setting the options
+                    that apply (e.g., body type, bitmap type)
+                </xsd:documentation>
+            </xsd:annotation>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:sequence>
+                        <xsd:element name="description" type="xsd:string"
+                                     minOccurs="0" maxOccurs="1"/>
+                        <xsd:element name="autogen" type="xsd:string"
+                                     minOccurs="0" maxOccurs="1"/>
+                        <xsd:element ref="formatters" minOccurs="0" maxOccurs="1"/>
+                        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+                            <xsd:element name="message">
+                                <xsd:complexType>
+                                    <xsd:sequence minOccurs="0" maxOccurs="unbounded">
+                                        <!-- xsd:element ref="field" minOccurs="0" maxOccurs="unbounded"
+                                            / -->
+                                        <xsd:element name="field">
+                                            <xsd:complexType>
+                                                <xsd:simpleContent>
+                                                    <xsd:extension base="xsd:string">
+                                                        <xsd:attribute name="f" use="required">
+                                                            <xsd:simpleType>
+                                                                <xsd:restriction base="xsd:integer">
+                                                                    <xsd:minInclusive value="2"/>
+                                                                    <xsd:maxInclusive value="192"/>
+                                                                </xsd:restriction>
+                                                            </xsd:simpleType>
+                                                        </xsd:attribute>
+                                                        <xsd:attribute name="dim" use="required">
+                                                            <xsd:simpleType>
+                                                                <xsd:restriction base="xsd:string">
+                                                                    <xsd:pattern
+                                                                            value="(lvar|llvar|lllvar|fixed)\([0-9]+\)"/>
+                                                                </xsd:restriction>
+                                                            </xsd:simpleType>
+                                                        </xsd:attribute>
+                                                        <xsd:attribute name="type" use="required">
+                                                            <xsd:simpleType>
+                                                                <xsd:restriction base="xsd:string">
+                                                                    <!-- <xsd:enumeration value="a"/> <xsd:enumeration value="n"/>
+                                                                        <xsd:enumeration value="s"/> <xsd:enumeration value="an"/> <xsd:enumeration
+                                                                        value="as"/> <xsd:enumeration value="ns"/> <xsd:enumeration value="ans"/>
+                                                                        <xsd:enumeration value="anp"/> <xsd:enumeration value="date"/> <xsd:enumeration
+                                                                        value="time"/> <xsd:enumeration value="exdate"/> <xsd:enumeration value="b"/>
+                                                                        <xsd:enumeration value="z"/> -->
+                                                                </xsd:restriction>
+                                                            </xsd:simpleType>
+                                                        </xsd:attribute>
+                                                        <xsd:attribute name="optional" type="xsd:boolean"
+                                                                       default="false"/>
+                                                        <xsd:attribute name="name" type="xsd:string"/>
+                                                        <xsd:attribute name="desc" type="xsd:string"/>
+                                                        <xsd:attribute name="autogen" type="xsd:string"/>
+                                                    </xsd:extension>
+                                                </xsd:simpleContent>
+                                            </xsd:complexType>
+                                        </xsd:element>
+                                    </xsd:sequence>
+                                    <xsd:attribute name="type" use="required">
+                                        <xsd:simpleType>
+                                            <xsd:restriction base="xsd:integer">
+                                                <xsd:pattern value="[0129][123456789][0123489][012345]"/>
+                                            </xsd:restriction>
+                                        </xsd:simpleType>
+                                    </xsd:attribute>
+                                    <xsd:attribute name="name" type="xsd:string"/>
+                                </xsd:complexType>
+                            </xsd:element>
+                        </xsd:sequence>
+                    </xsd:sequence>
+                    <xsd:attribute name="header" type="xsd:string"/>
+                    <xsd:attribute name="bitmapType" default="hex">
+                        <xsd:simpleType>
+                            <xsd:restriction base="xsd:string">
+                                <xsd:enumeration value="hex"/>
+                                <xsd:enumeration value="binary"/>
+                            </xsd:restriction>
+                        </xsd:simpleType>
+                    </xsd:attribute>
+                    <xsd:attribute name="charset" default="us-ascii">
+                        <xsd:simpleType>
+                            <xsd:restriction base="xsd:string">
+                                <!-- xsd:enumeration value="ascii"/> <xsd:enumeration value="ebcdic"/ -->
+                            </xsd:restriction>
+                        </xsd:simpleType>
+                    </xsd:attribute>
+                    <xsd:attribute name="contentType" default="text">
+                        <xsd:simpleType>
+                            <xsd:restriction base="xsd:string">
+                                <xsd:enumeration value="text"/>
+                                <xsd:enumeration value="bcd"/>
+                            </xsd:restriction>
+                        </xsd:simpleType>
+                    </xsd:attribute>
+                    <xsd:attribute name="strict" type="xsd:boolean"
+                                   default="false"/>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="formatters">
+        <xsd:complexType>
+            <xsd:sequence>
+                <xsd:element ref="formatter" minOccurs="0" maxOccurs="unbounded"/>
+            </xsd:sequence>
+        </xsd:complexType>
+    </xsd:element>
+    <xsd:element name="formatter">
+        <xsd:complexType>
+            <xsd:complexContent>
+                <xsd:extension base="beans:identifiedType">
+                    <xsd:attribute name="type" type="xsd:string"/>
+                    <xsd:attribute name="class" type="xsd:string"/>
+                    <xsd:attribute name="ref" type="xsd:string"/>
+                </xsd:extension>
+            </xsd:complexContent>
+        </xsd:complexType>
+    </xsd:element>
+</xsd:schema>

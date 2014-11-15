@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:iso="http://nulleins.org/schema/iso8583"
+       xsi:schemaLocation="
+	       	http://www.springframework.org/schema/beans
+				http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+			http://nulleins.org/schema/iso8583
+				http://nulleins.org/schema/iso8583-1.1.xsd">
+
+    <bean id="calFormatter" class="org.nulleins.formats.iso8583.formatters.CardAcceptorLocationFormatter"/>
+
+    <iso:schema id="badMessages" header="" bitmapType="hex" contentType="text" charset="ascii">
+
+        <iso:message type="0200" name="Transaction Request">
+            <iso:field f="2" name="accountNumber" desc="Primary Account Number" dim="llvar(19)" type="n"/>
+            <iso:field f="2" name="processingCode" desc="Processing Code" dim="fixed(6)" type="n"/>
+            <iso:field f="4" name="amount" desc="Amount, transaction (cents)" dim="fixed(12)" type="n"/>
+            <iso:field f="7" name="transDateTime" desc="Transmission Date and Time" dim="fixed(10)" type="date"/>
+            <iso:field f="11" name="stan" desc="System Trace Audit Number" dim="fixed(6)" type="n"/>
+            <iso:field f="12" name="transTimeLocal" desc="Time, local transaction" dim="fixed(6)" type="time"/>
+            <iso:field f="13" name="transDateLocal" desc="Date, local transaction" dim="fixed(4)" type="date"/>
+            <iso:field f="17" name="captureDate" desc="Date, capture" dim="fixed(4)" type="date"/>
+            <iso:field f="28" name="transactionFee" desc="Amount, transaction fee" dim="fixed(9)" type="xn"/>
+            <iso:field f="30" name="processingFee" desc="Amount, tx processing fee" dim="fixed(9)" type="xn"/>
+            <iso:field f="32" name="acquierID" desc="Acquiring Institution ID" dim="llvar(11)" type="n"/>
+            <iso:field f="33" name="forwarderID" desc="Forwarding Institution ID" dim="llvar(11)" type="n"/>
+            <iso:field f="37" name="rrn" desc="Retrieval Reference Number" dim="fixed(12)" type="anp"/>
+            <iso:field f="41" name="cardTermId" desc="Card Acceptor Terminal ID" dim="fixed(8)" type="ans"/>
+            <iso:field f="42" name="cardAcceptorId" desc="Card Acceptor ID Code" dim="fixed(15)" type="ans"/>
+            <iso:field f="43" name="cardAcceptorLoc" desc="Card Acceptor Location Name" dim="fixed(40)" type="CALf"/>
+            <iso:field f="49" name="currencyCode" desc="Currency Code, Transaction" dim="fixed(3)" type="n"/>
+            <iso:field f="60" name="adviceCode" desc="Advice/reason code" dim="lllvar(999)" type="an"/>
+            <iso:field f="102" name="accountId1" desc="Account Identification 1" dim="llvar(28)" type="ans"/>
+        </iso:message>
+
+    </iso:schema>
+
+</beans>

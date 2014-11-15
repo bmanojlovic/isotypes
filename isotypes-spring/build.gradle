@@ -1,0 +1,14 @@
+description = """Spring schema for isotypes"""
+
+def springCoreVersion = "4.1.0.RELEASE"
+
+dependencies {
+  compile project(':isotypes-core')
+  compile "org.springframework:spring-core:${springCoreVersion}"
+  compile "org.springframework:spring-beans:${springCoreVersion}"
+  compile "org.springframework:spring-context:${springCoreVersion}"
+
+  testCompile "org.springframework:spring-test:${springCoreVersion}"
+
+
+}

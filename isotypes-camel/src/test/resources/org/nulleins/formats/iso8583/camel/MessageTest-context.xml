@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:c="http://www.springframework.org/schema/c"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+            http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://camel.apache.org/schema/spring
+            http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+    <!-- load the ISO8583 message schema -->
+    <import resource="classpath:org/nulleins/formats/iso8583/camel/MessageSample-iso8583.xml"/>
+
+    <!-- create the format transform bean (message schema injected) -->
+    <bean id="iso8583" class="org.nulleins.formats.iso8583.camel.ISO8583Format" c:factory-ref="testMessages"/>
+
+    <!-- generates a new ISO8583 STAN Id -->
+    <bean id="stanGenerator" class="org.nulleins.formats.iso8583.StanGenerator"
+          c:floor="1" c:ceiling="999999" />
+
+    <camelContext id="testContext" xmlns="http://camel.apache.org/schema/spring" trace="true">
+        <route>
+            <from uri="seda:queue:request"/>
+            <marshal>
+                <custom ref="iso8583"/>
+            </marshal>
+            <to uri="mock:receiver"/>
+        </route>
+    </camelContext>
+</beans>

@@ -1,0 +1,13 @@
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder><pattern>
+            <![CDATA[ %d{HH:mm:ss.SSS} | %5.5level | %6.6thread | %30.30logger | %msg %n ]]>
+        </pattern></encoder>
+    </appender>
+
+    <logger name="org.nulleins" level="debug"/>
+    <logger name="org.apache.camel" level="debug"/>
+    <root level="debug">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>

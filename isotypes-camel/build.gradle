@@ -1,0 +1,16 @@
+description = """isotypes ISO8583 Camel integration"""
+
+def camelVersion = '2.14.0'
+
+dependencies {
+  compile project(':isotypes-core')
+  compile project(':isotypes-spring')
+  compile "org.apache.camel:camel-core:${camelVersion}"
+
+  testCompile "org.apache.camel:camel-spring:${camelVersion}"
+  testCompile "org.apache.camel:camel-spring-javaconfig:${camelVersion}"
+  testCompile "org.springframework:spring-test:4.1.0.RELEASE"
+  testCompile 'org.slf4j:slf4j-api:1.7.7'
+  testCompile 'org.slf4j:slf4j-simple:1.7.7'
+
+}
