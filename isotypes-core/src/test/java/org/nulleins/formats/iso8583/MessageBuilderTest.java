@@ -17,34 +17,36 @@ public class MessageBuilderTest {
 
   @Test
   public void builderCreatesMessage() throws IOException {
-    final Map<Integer, Object> fields = new HashMap<>();
+    final Map<Integer, Object> fields = new HashMap<Integer,Object>() {{
+      put(2, 10101);
+      put(4, new BigDecimal("420.50"));
+      put(3, "456");
+      put(7, DateTime.parse("2014-10-10T12:30:00Z"));
+      put(11, 123);
+      put(12, LocalTime.parse("13:00:00"));
+      put(13, DateTime.parse("2014-10-10T13:30:00Z"));
+      put(17, DateTime.parse("2014-10-10T14:00:00Z"));
+      put(28, BigDecimal.TEN);
+      put(30, BigDecimal.ONE);
+      put(32, 1827271711);
+      put(33, 827277722);
+      put(37, 717266621);
+      put(41, 2001919);
+      put(42, 978817112);
+      put(43, "1000");
+      put(49, 400);
+      put(54, 2);
+      put(60, 0);
+      put(102, 91817233372L);
+    }};
     final MTI messageType = MTI.create(0x0210);
     final Message subject = Message.Builder()
-        .messageTypeIndicator(messageType)
+        .messageType(messageType)
         .header("ISO015000077")
         .template(factory.getTemplate(messageType))
         .fields(fields)
         .build();
-    subject.setFieldValue(2, 10101);
-    subject.setFieldValue(4, new BigDecimal("420.50"));
-    subject.setFieldValue(3, "456");
-    subject.setFieldValue(7, DateTime.parse("2014-10-10T12:30:00Z"));
-    subject.setFieldValue(11, 123);
-    subject.setFieldValue(12, LocalTime.parse("13:00:00"));
-    subject.setFieldValue(13, DateTime.parse("2014-10-10T13:30:00Z"));
-    subject.setFieldValue(17, DateTime.parse("2014-10-10T14:00:00Z"));
-    subject.setFieldValue(28, BigDecimal.TEN);
-    subject.setFieldValue(30, BigDecimal.ONE);
-    subject.setFieldValue(32, 1827271711);
-    subject.setFieldValue(33, 827277722);
-    subject.setFieldValue(37, 717266621);
-    subject.setFieldValue(41, 2001919);
-    subject.setFieldValue(42, 978817112);
-    subject.setFieldValue(43, "1000");
-    subject.setFieldValue(49, 400);
-    subject.setFieldValue(54, 2);
-    subject.setFieldValue(60, 0);
-    subject.setFieldValue(102, 91817233372L);
+
 
     System.out.println(subject.describe());
 

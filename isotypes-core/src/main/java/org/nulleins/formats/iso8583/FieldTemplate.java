@@ -151,7 +151,7 @@ public class FieldTemplate {
         + (defaultValue != null ? (" default=[" + defaultValue + "]") : "");
   }
 
-  public Object parse(final byte[] data) throws ParseException {
+  public Object parse(final byte[] data) {
     Preconditions.checkNotNull(type);
     Preconditions.checkNotNull(dimension);
     Preconditions.checkNotNull(messageTemplate);
@@ -159,7 +159,11 @@ public class FieldTemplate {
     if (formatter == null) {
       throw new IllegalStateException("no formatter defined for field: " + this);
     }
-    return messageTemplate.getFormatter(type).parse(type, dimension, data.length, data);
+    try {
+      return messageTemplate.getFormatter(type).parse(type, dimension, data.length, data);
+    } catch (final ParseException e) {
+      throw new MessageException("Failed to parse field: " + this, e);
+    }
   }
 
   /**

@@ -28,8 +28,7 @@ public class CharMessageReader
 
   /** {@inheritDoc} */
   @Override
-  public byte[] readField(final FieldTemplate field, final DataInputStream input)
-      throws IOException {
+  public byte[] readField(final FieldTemplate field, final DataInputStream input) throws IOException {
     int length = field.getDimension().getLength();
     if (field.getDimension().getType() == Dimension.Type.VARIABLE) {
       final byte[] data = readBytes(field.getDimension().getVSize(), input);

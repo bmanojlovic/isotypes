@@ -2,7 +2,12 @@ package org.nulleins.formats.iso8583.types;
 
 import org.junit.Test;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.core.Is.is;
 
 
@@ -152,7 +157,6 @@ public class TestBitmap {
     final Bitmap bitmap = Bitmap.parse("E44000000000000880000000000000000010000000000000");
     assertThat(bitmap.isBitmapPresent(Bitmap.Id.TERTIARY), is(true));
     assertThat(bitmap.toString(), is("E44000000000000880000000000000000010000000000000"));
-
   }
 
   @Test
@@ -170,6 +174,22 @@ public class TestBitmap {
   private static final String HEX2 = "0000000000000040";
 
   @Test
+  public void canIterateOverBitmap() {
+    final Bitmap bitmap = Bitmap.parse("6440000000000008");
+    System.out.println(bitmap);
+    Set<Integer> fieldsPresent = new HashSet<>();
+    for ( final int field : bitmap) {
+      System.out.print(field + ",");
+      fieldsPresent.add(field);
+    }
+    System.out.println();
+    assertThat(fieldsPresent, hasSize(5));
+    assertThat(fieldsPresent, contains(2,3,6,10,61));
+
+    bitmap.iterator().remove();
+  }
+
+  @Test
   public void testBitmapParseHex1() {
     // 01100100 01000000 00000000 00000000 00000000 00000000 00000000 000010000
     final Bitmap target = Bitmap.parse("6440000000000008");
@@ -184,6 +204,7 @@ public class TestBitmap {
     assertThat(target.isFieldPresent(8), is(false));
     assertThat(target.isFieldPresent(9), is(false));
     assertThat(target.isFieldPresent(10), is(true));
+    assertThat(target.isFieldPresent(61), is(true));
 
     assertThat(target.isBitmapPresent(Bitmap.Id.SECONDARY), is(false));
 

@@ -1,5 +1,8 @@
 package org.nulleins.formats.iso8583;
 
+import com.google.common.base.Function;
+import com.google.common.base.Optional;
+import com.google.common.collect.Maps;
 import org.joda.time.DateTime;
 import org.joda.time.LocalTime;
 import org.joda.time.format.DateTimeFormat;
@@ -20,6 +23,7 @@ import java.math.BigInteger;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,24 +64,22 @@ public class TestXsd {
   public void testCreateMessage()
       throws ParseException, IOException {
     // create the test message and set field values:
-    final Message message = messages.create(MTI.create(0x0200));
-    message.setFieldValue("cardNumber", new CardNumber(5432818929192L));
-    message.setFieldValue("processingCode", 1010);
-    message.setFieldValue("amount", new BigInteger("1200"));
-    message.setFieldValue("transDateTime",
-        (new SimpleDateFormat("MMddHHmmss")).parse("1212121212"));
-    message.setFieldValue("stan", 666666);
-    message.setFieldValue("transTimeLocal",
-        (new SimpleDateFormat("HHmmss")).parse("121212"));
-    message.setFieldValue("transDateLocal",
-        (new SimpleDateFormat("MMdd")).parse("1212"));
-    message.setFieldValue("acquierID", 1029);
-    message.setFieldValue("extReference", 937278626262L);
-    message.setFieldValue("cardTermId", "ATM-10101");
-    message.setFieldValue("cardTermName", "DUB87");
-    message.setFieldValue("msisdn", 353863579271L);
-    message.setFieldValue("currencyCode", 840);
-    message.setFieldValue("originalData", BigInteger.TEN);
+    final Message message = messages.createByNames(MTI.create(0x0200), new HashMap<String,Object>() {{
+        put("cardNumber", new CardNumber(5432818929192L));
+        put("processingCode", 1010);
+        put("amount", new BigInteger("1200"));
+        put("transDateTime", (new SimpleDateFormat("MMddHHmmss")).parse("1212121212"));
+        put("stan", 666666);
+        put("transTimeLocal", (new SimpleDateFormat("HHmmss")).parse("121212"));
+        put("transDateLocal", (new SimpleDateFormat("MMdd")).parse("1212"));
+        put("acquierID", 1029);
+        put("extReference", 937278626262L);
+        put("cardTermId", "ATM-10101");
+        put("cardTermName", "DUB87");
+        put("msisdn", 353863579271L);
+        put("currencyCode", 840);
+        put("originalData", BigInteger.TEN);
+      }});
 
     // check the message has been correctly created:
     assertThat(message.validate(), empty());
@@ -91,20 +93,21 @@ public class TestXsd {
     final DateTime dateTime = DateTimeFormat.forPattern("MMddHHmmss").parseDateTime("1212121212");
     final DateTime date = DateTimeFormat.forPattern("MMdd").parseDateTime("1212");
     final LocalTime localTime = DateTimeFormat.forPattern("HHmmss").parseLocalTime("121212");
-    assertThat((String)readback.getFieldValue("cardNumber"), is("5432*******92"));
-    assertThat((BigInteger)readback.getFieldValue("processingCode"), is(BigInteger.valueOf(1010)));
-    assertThat((BigInteger)readback.getFieldValue("amount"), is(BigInteger.valueOf(1200)));
-    assertThat((DateTime)readback.getFieldValue("transDateTime"), is(dateTime));
-    assertThat((BigInteger)readback.getFieldValue("stan"), is(BigInteger.valueOf(666666)));
-    assertThat((LocalTime)readback.getFieldValue("transTimeLocal"), is(localTime));
-    assertThat((DateTime)readback.getFieldValue("transDateLocal"), is(date));
-    assertThat((BigInteger)readback.getFieldValue("acquierID"), is(BigInteger.valueOf(1029)));
-    assertThat((BigInteger)readback.getFieldValue("extReference"), is(BigInteger.valueOf(937278626262L)));
-    assertThat((String)readback.getFieldValue("cardTermId"), is("ATM-10101"));
-    assertThat((String)readback.getFieldValue("cardTermName"), is("DUB87"));
-    assertThat((BigInteger)readback.getFieldValue("msisdn"), is(BigInteger.valueOf(353863579271L)));
-    assertThat((BigInteger)readback.getFieldValue("currencyCode"), is(BigInteger.valueOf(840)));
-    assertThat((BigInteger)readback.getFieldValue("originalData"), is(BigInteger.TEN));
+    final Map<Integer, Object> results = Maps.transformValues(readback.getFields(), Functions.fromOptional());
+    assertThat((String)results.get(2), is("5432*******92"));
+    assertThat((BigInteger)results.get(3), is(BigInteger.valueOf(1010)));
+    assertThat((BigInteger)results.get(4), is(BigInteger.valueOf(1200)));
+    assertThat((DateTime)results.get(7), is(dateTime));
+    assertThat((BigInteger)results.get(11), is(BigInteger.valueOf(666666)));
+    assertThat((LocalTime)results.get(12), is(localTime));
+    assertThat((DateTime)results.get(13), is(date));
+    assertThat((BigInteger)results.get(32), is(BigInteger.valueOf(1029)));
+    assertThat((BigInteger)results.get(37), is(BigInteger.valueOf(937278626262L)));
+    assertThat((String)results.get(41), is("ATM-10101"));
+    assertThat((String)results.get(43), is("DUB87"));
+    assertThat((BigInteger)results.get(48), is(BigInteger.valueOf(353863579271L)));
+    assertThat((BigInteger)results.get(49), is(BigInteger.valueOf(840)));
+    assertThat((BigInteger)results.get(90), is(BigInteger.TEN));
 
     // check the describer by comparing the desc of the original message
     // with that of the read-back message; as the data-types can change in translation,
@@ -124,7 +127,7 @@ public class TestXsd {
   @Test(expected = MessageException.class)
   public void testCreateBadMessage() {
     // create the test message and set field values:
-    final Message message = messages.create(MTI.create(0x0200));
+    final Message message = messages.create(MTI.create(0x0200), Collections.<Integer,Object>emptyMap());
     final List<String> errors = message.validate();
     if (!errors.isEmpty()) {
       throw new MessageException(errors);
@@ -163,20 +166,22 @@ public class TestXsd {
       put(13, df.parse("17-11-2016"));
     }};
 
-    final Message message = messages.createFromBean(MTI.create("0200"), bean);
-    message.addFields(params);
+    final Message message = messages.createFromBean(MTI.create("0200"), bean, params);
 
     assertThat(message.validate(), empty());
 
     final String messageText = new String(messages.getMessageData(message));
 
     assertThat(messageText, is(ExpectedBeanMessage));
-
-    final Message response = messages.duplicate(MTI.create("0400"), message);
-
-    response.setFieldValue("currencyCode2", 885);
-    response.setFieldValue("currencyCode3", 350);
-
+    final Message response = messages.transform(MTI.create(0x0400),message,
+        new HashMap<String, Object>() {{
+          put("currencyCode2", 885);
+          put("currencyCode3", 350);
+        }});
+    System.out.println(response.describe());
+    for ( final String error : response.validate()) {
+      System.out.println(error);
+    }
     assertThat(response.isValid(), is(true));
   }
 
@@ -186,7 +191,12 @@ public class TestXsd {
     final Message message = messages.parse(ExpectedBeanMessage.getBytes());
 
     assertThat(message.validate(), empty());
-    final Map<Integer, Object> result = message.getFields();
+    final Map<Integer, Object> result = Maps.transformValues(message.getFields(), new Function<Optional<Object>, Object>() {
+          @Override
+          public Object apply(final Optional<Object> input) {
+            return input.orNull();
+          }
+        });
 
     assertThat(message.validate(), empty());
     assertThat(message.getMTI(), is(MTI.create("0200")));
@@ -245,8 +255,10 @@ public class TestXsd {
   @Test
   public void testParseMessage()
       throws ParseException, IOException {
-    final Map<Integer, Object> params = messages.parse(Payment_Request.getBytes()).getFields();
-    assertThat((String)params.get(2), is("5264**********02"));
+    final Map<Integer, Object> params = Maps.transformValues(
+        messages.parse(Payment_Request.getBytes()).getFields(), Functions.fromOptional());
+
+    assertThat((String) params.get(2), is("5264**********02"));
     assertThat((BigInteger)params.get(3), is(BigInteger.valueOf(305700)));
     assertThat((BigInteger)params.get(4), is(BigInteger.valueOf(32000)));
     assertThat(params.get(7).toString(), is("2000-12-10T22:02:13.000Z"));
@@ -270,24 +282,23 @@ public class TestXsd {
   public void
   testCreateMessageAPI()
       throws IOException, ParseException {
-    final Message request = messages.create(MTI.create(0x0200));
-    assertThat(request.isValid(), is(false));
-
     final Date testDate = (new SimpleDateFormat("ddMMyyyy:HHmmss")).parse("12122012:121200");
-    request.setFieldValue(2, 5432818929192L);
-    request.setFieldValue(3, 1010);
-    request.setFieldValue(4, new BigInteger("1200"));
-    request.setFieldValue(7, testDate);
-    request.setFieldValue(11, 666666);
-    request.setFieldValue(12, testDate);
-    request.setFieldValue(13, testDate);
-    request.setFieldValue(32, 1029);
-    request.setFieldValue(37, 937278626262L);
-    request.setFieldValue(41, "ATM-10101");
-    request.setFieldValue(43, "DUB87");
-    request.setFieldValue(48, 353863579271L);
-    request.setFieldValue(49, 840);
-    request.setFieldValue(90, BigInteger.TEN);
+    final Message request = messages.create(MTI.create(0x0200), new HashMap<Integer,Object>() {{
+        put(2, 5432818929192L);
+        put(3, 1010);
+        put(4, new BigInteger("1200"));
+        put(7, testDate);
+        put(11, 666666);
+        put(12, testDate);
+        put(13, testDate);
+        put(32, 1029);
+        put(37, 937278626262L);
+        put(41, "ATM-10101");
+        put(43, "DUB87");
+        put(48, 353863579271L);
+        put(49, 840);
+        put(90, BigInteger.TEN);
+      }});
 
     assertThat(request.isValid(), is(true));
 

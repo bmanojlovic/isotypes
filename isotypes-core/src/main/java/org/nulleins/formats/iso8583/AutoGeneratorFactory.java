@@ -1,5 +1,7 @@
 package org.nulleins.formats.iso8583;
 
+import com.google.common.base.Optional;
+
 import java.util.Calendar;
 
 /**
@@ -19,19 +21,19 @@ public class AutoGeneratorFactory {
   }
 
   /** @return the specified auto-generated value, or null if specification not understood */
-  public Object generate(final String autogen, final FieldTemplate field) {
+  public Optional<Object> generate(final String autogen, final FieldTemplate field) {
     if (autogen == null || autogen.isEmpty()) {
       return null;
     }
     if ("=now".equals(autogen)) {
-      return Calendar.getInstance().getTime();
+      return Optional.<Object>of(Calendar.getInstance().getTime());
     }
     if (!autogen.startsWith("#")) {
-      return null;
+      return Optional.absent();
     }
 
     if (generator != null) {
-      return generator.generate(autogen, field);
+      return Optional.fromNullable(generator.generate(autogen, field));
     }
     return null;
   }

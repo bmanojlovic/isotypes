@@ -1,10 +1,12 @@
 package org.nulleins.formats.iso8583;
 
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Throwables;
+import com.google.common.collect.Maps;
 import org.nulleins.formats.iso8583.io.BCDMessageReader;
 import org.nulleins.formats.iso8583.io.CharMessageReader;
 import org.nulleins.formats.iso8583.io.MessageReader;
-import org.nulleins.formats.iso8583.types.Bitmap;
 import org.nulleins.formats.iso8583.types.BitmapType;
 import org.nulleins.formats.iso8583.types.CharEncoder;
 import org.nulleins.formats.iso8583.types.ContentType;
@@ -12,8 +14,6 @@ import org.nulleins.formats.iso8583.types.MTI;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.text.ParseException;
-import java.util.HashMap;
 import java.util.Map;
 
 
@@ -38,20 +38,18 @@ public class MessageParser {
     this.bitmapType = bitmapType;
   }
 
-  public static MessageParser create (
+  public static MessageParser create(
       final String header, final Map<MTI, MessageTemplate> messages,
       final ContentType contentType, final CharEncoder charset, final BitmapType bitmapType) {
-    return new MessageParser(header,messages,contentType,charset,bitmapType);
+    return new MessageParser(header, messages, contentType, charset, bitmapType);
   }
 
   private MessageReader getMessageReader() {
-    switch (contentType) {
-      case TEXT:
-        return new CharMessageReader(charset);
-      case BCD:
-        return new BCDMessageReader(charset);
+    if (contentType == ContentType.TEXT) {
+      return new CharMessageReader(charset);
+    } else { // contentType == ContentType.BCD
+      return new BCDMessageReader(charset);
     }
-    return null;
   }
 
   /**
@@ -63,10 +61,45 @@ public class MessageParser {
    * @throws IllegalArgumentException if the supplied input stream is null
    */
   public Message parse(final DataInputStream input) throws IOException {
-    Preconditions.checkNotNull(input,"Input stream for ISO8583 message cannot be null");
+    Preconditions.checkNotNull(input, "Input stream for ISO8583 message cannot be null");
     final MessageReader reader = getMessageReader();
+    final String header = validateHeader(input, reader);
+    final MTI mti = reader.readMTI(input);
+    final MessageTemplate template = validateMessageTemplate(mti);
 
-    // if the header field is required, check that it is present
+    return Message.create(template, header,
+      Maps.toMap(reader.readBitmap(bitmapType, input), parseMessage(input, reader, template)));
+  }
+
+  /** @return a function that can parse a message into a map of field numbers to values */
+  private static Function<Integer, Object> parseMessage(
+      final DataInputStream input, final MessageReader reader, final MessageTemplate template) {
+    return new Function<Integer, Object>() {
+      @Override
+      public Object apply(final Integer fieldNum) {
+        final FieldTemplate field = template.getFields().get(fieldNum);
+        try {
+          return field.parse(reader.readField(field, input));
+        } catch ( Throwable t) {
+          throw Throwables.propagate(t);
+        }
+      }
+    };
+  }
+
+  /** @return the message template fot the specified message <code>type</code>
+    * @throws MessageException if no template is defined for <code>type</code> */
+  private MessageTemplate validateMessageTemplate(final MTI type) {
+    final MessageTemplate template = messages.get(type);
+    if (template == null) {
+      throw new MessageException("Message type [" + type + "] not defined in this message set");
+    }
+    return template;
+  }
+
+  /** @return the header field, or empty String if not required
+   * @throws MessageException if the header is required but not present */
+  private String validateHeader(final DataInputStream input, final MessageReader reader) throws IOException {
     final int headerLen = header != null ? header.length() : 0;
     if (headerLen > 0) {
       final String msgHeader = reader.readHeader(headerLen, input);
@@ -74,37 +107,7 @@ public class MessageParser {
         throw new MessageException("Message should start with header: [" + header + "]");
       }
     }
-
-    // read the message type (MTI)
-    final MTI type = reader.readMTI(input);
-    final MessageTemplate template = messages.get(type);
-    if (template == null) {
-      throw new MessageException("Message type [" + type + "] not defined in this message set");
-    }
-
-    // create resulting message
-    final Message result = new Message(template.getMessageTypeIndicator(), headerLen > 0 ? header : "");
-
-    final Bitmap bitmap = reader.readBitmap(bitmapType, input);
-
-    // iterate across all possible fields, parsing if present:
-    final Map<Integer, Object> fields = new HashMap<>();
-    for ( int fieldNum = 2; fieldNum <= 192; fieldNum++) {
-      if (!bitmap.isFieldPresent(fieldNum)) {
-        continue;
-      }
-      final FieldTemplate field = template.getFields().get(fieldNum);
-      final byte[] fieldData = reader.readField(field, input);
-      try {
-        final Object value = field.parse(fieldData);
-        fields.put(field.getNumber(), value);
-      } catch (final ParseException e) {
-        throw new MessageException("Failed to parse field: " + field.toString(), e);
-      }
-    }
-    result.setFields(fields);
-
-    return result;
+    return headerLen > 0 ? header : "";
   }
 
 }

@@ -4,16 +4,18 @@ import com.google.common.base.Preconditions;
 
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 
-/**
- * Implementation of the ISO8583 bitmap type, with facilities to create, parse and format a
- * message's bitmap in a f of formats
- * @author phillipsr
- */
-public class Bitmap {
+/** Implementation of the ISO8583 bitmap type, with facilities to create, parse and format a
+  * message's bitmap in a f of formats
+  * @author phillipsr */
+public class Bitmap implements Iterable<Integer> {
   private static final Pattern HexMatcher = Pattern.compile("[0-9A-Fa-f]+");
+  private static final int FIRST_FIELD = 2;
+  private static final int LAST_FIELD = 192;
 
   public enum Id {
     PRIMARY(0), SECONDARY(1), TERTIARY(2);
@@ -24,23 +26,18 @@ public class Bitmap {
     }
   }
 
-  /**
-   * bitsets hold the three bitmaps available to a message, and
-   * are indexed by the <code>Id.index</code> from the enum above
-   */
+  /** bitsets hold the three bitmaps available to a message, and
+    * are indexed by the <code>Id.index</code> from the enum above */
   private final BitSet[] bitmaps = new BitSet[]{new BitSet(), new BitSet(), new BitSet()};
 
   public Bitmap() {
   }
 
-  /**
-   * Create a bitmap, instantiating it from the supplied Hex string, which
-   * may represent a primary, primary + secondary or primary + secondary + tertiary
-   * bitmap
-   * @param value hexadecimal representation of a bitmap
-   * @throws IllegalArgumentException if the bitmap is not a 16, 32 or 48 byte long
-   *                                  hexadecimal string
-   */
+  /** Create a bitmap, instantiating it from the supplied Hex string, which may
+    * represent a primary, primary + secondary or primary + secondary + tertiary bitmap
+    * @param value hexadecimal representation of a bitmap
+    * @throws IllegalArgumentException if the bitmap is not a 16, 32 or 48 byte long
+    *                                  hexadecimal string */
   public static Bitmap parse(final String value) {
     Preconditions.checkNotNull(value, "Hex bitmap must not be null");
     final String hexBitmap = value.trim();
@@ -64,7 +61,7 @@ public class Bitmap {
   }
 
   /** Construct a bitmap from <code>binBitmap</code>, an array of byte values
-   * @throws IllegalArgumentException if the supplied array is less than 8 bytes */
+    * @throws IllegalArgumentException if the supplied array is less than 8 bytes */
   public Bitmap(final byte... binBitmap) {
     Preconditions.checkArgument(binBitmap != null && binBitmap.length >= 8, "Bin bitmap must be >= 8 bytes in size");
     final int length = binBitmap.length;
@@ -91,12 +88,10 @@ public class Bitmap {
     bitmaps[Id.TERTIARY.index].clear();
   }
 
-  /**
-   * @param fieldNb
-   * @throws IllegalArgumentException if the fieldNb is not {2..64} or {66..128} or {130..192}
-   */
+  /** @param fieldNb
+    * @throws IllegalArgumentException if the fieldNb is not {2..64} or {66..128} or {130..192} */
   public void setField(final int fieldNb) {
-    Preconditions.checkArgument(!(fieldNb < 2 || fieldNb > 192 || fieldNb == 65 || fieldNb == 129),
+    Preconditions.checkArgument(!(fieldNb < FIRST_FIELD || fieldNb > LAST_FIELD || fieldNb == 65 || fieldNb == 129),
         "fieldNb can only be: {2..64} or {66..128} or {130..192} (fieldNb=" + fieldNb + ")");
     final Id bitmapId = getBitmapIdForField(fieldNb);
     final BitSet bitmap = bitmaps[bitmapId.index];
@@ -104,10 +99,8 @@ public class Bitmap {
     setBitmapPresent(bitmapId);
   }
 
-  /**
-   * @param fieldNb
-   * @return
-   */
+  /** @param fieldNb
+    * @return */
   private Id getBitmapIdForField(final int fieldNb) {
     if (fieldNb <= 64) {
       return Id.PRIMARY;
@@ -128,10 +121,8 @@ public class Bitmap {
     }
   }
 
-  /**
-   * @param fieldNb
-   * @return
-   */
+  /** @param fieldNb
+    * @return */
   public boolean isFieldPresent(final int fieldNb) {
     final Id bitmapId = getBitmapIdForField(fieldNb);
     final BitSet bitmap = bitmaps[bitmapId.index];
@@ -170,6 +161,32 @@ public class Bitmap {
       }
     }
     return result.toString();
+  }
+
+
+  @Override
+  public Iterator<Integer> iterator() {
+    return new Iterator<Integer>() {
+      private final AtomicInteger nextFieldNum = new AtomicInteger(1);
+
+      @Override
+      public boolean hasNext() {
+        while(!isFieldPresent(nextFieldNum.incrementAndGet())) {
+          if(nextFieldNum.get() > LAST_FIELD) {
+            return false;
+          }
+        }
+        return true;
+      }
+
+      @Override
+      public Integer next() {
+        return nextFieldNum.get();
+      }
+
+      @Override
+      public void remove() { }
+    };
   }
 
 }

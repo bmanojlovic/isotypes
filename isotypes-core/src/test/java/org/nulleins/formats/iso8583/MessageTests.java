@@ -9,6 +9,8 @@ import org.nulleins.formats.iso8583.types.FieldType;
 import org.nulleins.formats.iso8583.types.MTI;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TreeSet;
 
 import static java.util.Arrays.asList;
@@ -49,26 +51,26 @@ public class MessageTests {
 
     final MTI mt1 = MTI.create(0x0400);
     message400 = Message.Builder()
-        .messageTypeIndicator(mt1)
+        .messageType(mt1)
         .template(factory.getTemplate(mt1))
         .build();
     final MTI mt2 = MTI.create(0x0410);
     message410 = Message.Builder()
-        .messageTypeIndicator(mt2)
+        .messageType(mt2)
         .template(factory.getTemplate(mt2))
         .build();
     final MTI mt3 = MTI.create(0x0210);
     message210 = Message.Builder()
-        .messageTypeIndicator(mt3)
+        .messageType(mt3)
         .template(factory.getTemplate(mt3))
         .build();
     final MTI mt4 = MTI.create(0x0200);
     message200 = Message.Builder()
-        .messageTypeIndicator(mt4)
+        .messageType(mt4)
         .template(factory.getTemplate(mt4))
         .build();
     message200_2 = Message.Builder()
-        .messageTypeIndicator(mt4)
+        .messageType(mt4)
         .header("ISO015000077")
         .template(factory.getTemplate(mt4))
         .build();
@@ -87,25 +89,54 @@ public class MessageTests {
   @Test
   public void fieldEquality() {
     final MTI mti = MTI.create(0x0400);
+    final Map<Integer,Object> field1 = new HashMap<Integer,Object>() {{
+      put(2,1);
+    }};
+    final Map<Integer,Object> field2 = new HashMap<Integer,Object>() {{
+      put(2,1);
+    }};
     final Message first = Message.Builder()
-        .messageTypeIndicator(mti)
+        .messageType(mti)
         .header("ISO015000077")
         .template(factory.getTemplate(mti))
+        .fields(field1)
         .build();
     final Message second = Message.Builder()
-        .messageTypeIndicator(mti)
+        .messageType(mti)
         .header("ISO015000077")
         .template(factory.getTemplate(mti))
+        .fields(field2)
         .build();
     assertThat(first, is(second));
     assertThat(first.hashCode(), is(second.hashCode()));
-
-    first.setFieldValue(2, 1);
-    second.setFieldValue(2, 2);
-    assertThat(first, is(not(second)));
   }
 
-  @Test ( expected = NoSuchMethodError.class)
+  @Test
+  public void fieldInequality() {
+    final MTI mti = MTI.create(0x0400);
+    final Map<Integer,Object> field1 = new HashMap<Integer,Object>() {{
+      put(2,1);
+    }};
+    final Map<Integer,Object> field2 = new HashMap<Integer,Object>() {{
+      put(2,2);
+    }};
+    final Message first = Message.Builder()
+        .messageType(mti)
+        .header("ISO015000077")
+        .template(factory.getTemplate(mti))
+        .fields(field1)
+        .build();
+    final Message second = Message.Builder()
+        .messageType(mti)
+        .header("ISO015000077")
+        .template(factory.getTemplate(mti))
+        .fields(field2)
+        .build();
+    assertThat(first, is(not(second)));
+    assertThat(first.hashCode(), is(not(second.hashCode())));
+  }
+
+  @Test
   public void describesMessage() {
     final Iterable<String> description = message200.describe();
     assertThat(Iterables.getFirst(description, ""),

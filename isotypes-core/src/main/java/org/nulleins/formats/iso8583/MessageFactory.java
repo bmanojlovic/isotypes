@@ -3,6 +3,8 @@ package org.nulleins.formats.iso8583;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Maps.EntryTransformer;
 import org.apache.commons.beanutils.PropertyUtils;
@@ -179,7 +181,7 @@ public class MessageFactory {
   /** Add a <code>message</code> to this factory's schema */
   public void addTemplate(final MessageTemplate message) {
     message.setSchema(this);
-    this.templates.put(message.getMessageTypeIndicator(), message);
+    this.templates.put(message.getMessageType(), message);
   }
 
   /** @return a string representation of this message factory */
@@ -201,19 +203,16 @@ public class MessageFactory {
     * @param params field value to include in message, indexed by field f
     * @throws IllegalArgumentException - if the supplied MTI is null */
   public Message createByNumbers(final MTI type, final Map<Integer, Object> params) {
-    final Message result = new Message(type, header);
-    result.setFields(params);
-    result.setTemplate(templates.get(type));
-    return result;
+    return Message.create(templates.get(type), header, params);
   }
 
-  /** Write a message to the supplied <code>output</code> stream
+  /** @return the map of fields that were written a message to the supplied <code>output</code> stream
     * @param message
     * @param output
     * @throws java.io.IOException
     * @see #writeFromNumberMap(org.nulleins.formats.iso8583.types.MTI, java.util.Map, java.io.OutputStream) */
-  public void writeToStream(final Message message, final OutputStream output) throws IOException {
-    writeFromNumberMap(message.getMTI(), message.getFields(), output);
+  public Map<Integer, Optional<Object>> writeToStream(final Message message, final OutputStream output) throws IOException {
+    return writeFromNumberMap(message.getMTI(), message.getFields(), output);
   }
 
   /** Create a message for the type and parameters specified and write it to the <code>output</code> stream
@@ -223,7 +222,7 @@ public class MessageFactory {
     * @throws java.io.IOException      if writing to the output stream fails for any reason
     * @throws IllegalArgumentException if the type supplied is not defined in this factory's schema,
     *                                  the output stream is null or null/empty message parameters have been supplied */
-  public void writeFromNumberMap(final MTI type, final Map<Integer, Object> params, final OutputStream output)
+  public Map<Integer, Optional<Object>> writeFromNumberMap(final MTI type, final Map<Integer, Optional<Object>> params, final OutputStream output)
       throws IOException {
     Preconditions.checkArgument(templates.containsKey(type), "Message not defined for MTI=" + type);
     Preconditions.checkNotNull(output, "Output stream cannot be null");
@@ -237,23 +236,22 @@ public class MessageFactory {
     writer.appendMTI(type, dos);
     writer.appendBitmap(template.getBitmap(), bitmapType, dos);
 
-    // Iterate over the fields in order of field f,
-    // appending the field's data to the output stream
+    // Iterate over the fields in order of field f, appending the field's data to the output stream
+    final Map<Integer, Optional<Object>> result = new HashMap<>();
     for (final Integer key : new TreeSet<>(template.getFields().keySet())) {
-      final FieldTemplate value1 = template.getFields().get(key);
-      final Object key1 = params.get(key);
-      final Object value = writeField(key1, writer, dos, value1);
-      // update parameter map with possibly autogen'd/default value, for consistency
-      params.put(key, value);
+      final FieldTemplate fieldTemplate = template.getFields().get(key);
+      final Optional<Object> value = params.get(key);
+      result.put ( key, writeField(value, writer, dos, fieldTemplate));
     }
-
     dos.flush();
+
+    return ImmutableMap.copyOf(result);
   }
 
-  private Object writeField(final Object param, final MessageWriter writer, final DataOutputStream dos, final FieldTemplate field)
+  private Optional<Object> writeField(final Optional<Object> param, final MessageWriter writer, final DataOutputStream dos, final FieldTemplate field)
       throws IOException {
-    Object data = param;
-    if (data == null && !field.isOptional()) {
+    Optional<Object> data = param;
+    if (!data.isPresent() && !field.isOptional()) {
       // first, try to autogen, and then fall back to default (if any)
       final String autogen = field.getAutogen();
       if (autogen != null && !autogen.isEmpty()) {
@@ -263,15 +261,15 @@ public class MessageFactory {
         }
         data = autoGenerator.get().generate(autogen, field);
       }
-      if (data == null) {
-        data = field.getDefaultValue();
+      if (!data.isPresent()) {
+        data = Optional.<Object>fromNullable(field.getDefaultValue());
       }
-      if (data == null) {
-        throw new MessageException("Value is <null> for field: " + field);
+      if (!data.isPresent()) {
+        throw new MessageException("No value for field: " + field);
       }
     }
-    if (data != null) {
-      writer.appendField(field, data, dos);
+    if (data.isPresent()) {
+      writer.appendField(field, data.get(), dos);
     }
     return data;
   }
@@ -311,6 +309,15 @@ public class MessageFactory {
     Preconditions.checkArgument(templates.containsKey(type), "Message not defined for MTI=" + type);
     return createByNumbers(type,
         Maps.transformEntries(templates.get(type).getFields(), mapBeanValues(bean)));
+  }
+
+  public Message createFromBean(final MTI type, final Object bean, final Map<Integer,Object> extraFields) {
+    Preconditions.checkArgument(templates.containsKey(type), "Message not defined for MTI=" + type);
+    final Map<Integer, Object> fieldValues = Maps.transformEntries(templates.get(type).getFields(), mapBeanValues(bean));
+    return createByNumbers(type, new HashMap<Integer,Object>() {{
+      putAll(fieldValues);
+      putAll(extraFields);
+    }});
   }
 
   /** @return the template registered against <code>type</code> */
@@ -358,9 +365,7 @@ public class MessageFactory {
     } else {
       dis = (DataInputStream) input;
     }
-    final Message result = parser.parse(dis);
-    result.setTemplate(templates.get(result.getMTI()));
-    return result;
+    return parser.parse(dis);
   }
 
   /** @return an ISO8583 message of the type requested, setting the field values
@@ -372,18 +377,32 @@ public class MessageFactory {
   public Message createByNames(final MTI type, final Map<String, Object> params) {
     Preconditions.checkArgument(templates.containsKey(type), "Message not defined for MTI=" + type);
     // convert the name map supplied to a field f keyed map
-    return createByNumbers(type,
-        Maps.transformEntries(templates.get(type).getFields(), mapValuesByName(params)));
+
+    final Map<String, Object> fields = Maps.filterEntries(params, Predicates.notNull());
+    return createByNumbers(type, Maps.transformEntries(templates.get(type).getFields(), mapValuesByName(fields)));
   }
 
   /** @return an empty ISO8583 message of the type requested, from the configured
    * <code>&lt;iso:message&gt;</code> template
-   * @param mti type of message */
-  public Message create(final MTI mti) {
+   * @param mti type of message
+   * @param fields */
+  public Message create(final MTI mti, final Map<Integer, Object> fields) {
     final MessageTemplate template = templates.get(mti);
-    final Message result = new Message(mti, template.getHeader());
-    result.setTemplate(template);
-    return result;
+    return Message.create(template,template.getHeader(), fields);
+  }
+
+  public Message transform(final MTI messageType, final Message original, final HashMap<String, Object> extraFields) {
+    final MessageTemplate template = templates.get(messageType);
+    final Map<Integer, Object> fieldValues = new HashMap<Integer, Object>() {{
+      putAll(original.getFields());
+      putAll(Maps.transformEntries(template.getFields(), mapValuesByName(extraFields)));
+    }};
+    return Message.Builder()
+        .messageType(messageType)
+        .header(original.getHeader())
+        .template(template)
+        .fields(fieldValues)
+        .build();
   }
 
   /** @return a duplicate of <code>source</code>, but using the <code>messageType</code> specified
@@ -398,7 +417,7 @@ public class MessageFactory {
     final MessageTemplate template = templates.get(messageType);
     final Map<Integer, Object> fields = Maps.transformEntries(
         Maps.filterEntries(template.getFields(), fieldPresent(source)), mapValuesByNumber(source));
-    return source.asType(messageType, template, fields);
+    return source.asType(template, fields);
   }
 
   /** @return predicate evaluating to true if field present in both <code>message</code> and <code>template</code> */
@@ -436,8 +455,7 @@ public class MessageFactory {
         try {
           return PropertyUtils.getProperty(bean, field.getName());
         } catch (final Exception e) {
-          // ignore, as this value may be set later as a protocol parameter
-          return null;
+          return null;//Throwables.propagate(e);
         }
       }
     };

@@ -2,8 +2,6 @@ package org.nulleins.formats.iso8583;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nulleins.formats.iso8583.Message;
-import org.nulleins.formats.iso8583.MessageFactory;
 import org.nulleins.formats.iso8583.types.MTI;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -15,6 +13,7 @@ import java.nio.charset.Charset;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -68,21 +67,21 @@ public class EncodingTest {
   private Message getTestMessage()
       throws ParseException {
     final Date testDate = (new SimpleDateFormat("ddMMyyyy:HHmmss")).parse("12122012:121200");
-    final Message message = factory.create(MTI.create(0x0200));
-    message.setFieldValue("cardNumber", 5432818929192L);
-    message.setFieldValue("processingCode", 1010);
-    message.setFieldValue("amount", new BigInteger("1200"));
-    message.setFieldValue("transDateTime", testDate);
-    message.setFieldValue("stan", 666666);
-    message.setFieldValue("transTimeLocal", testDate);
-    message.setFieldValue("transDateLocal", testDate);
-    message.setFieldValue("acquierID", 1029);
-    message.setFieldValue("extReference", 937278626262L);
-    message.setFieldValue("cardTermId", "ATM-10101");
-    message.setFieldValue("cardTermName", "DUB87");
-    message.setFieldValue("msisdn", 353863579271L);
-    message.setFieldValue("currencyCode", 840);
-    message.setFieldValue("originalData", BigInteger.TEN);
-    return message;
+    return factory.createByNames(MTI.create(0x0200), new HashMap<String,Object>() {{
+        put("cardNumber", 5432818929192L);
+        put("processingCode", 1010);
+        put("amount", new BigInteger("1200"));
+        put("transDateTime", testDate);
+        put("stan", 666666);
+        put("transTimeLocal", testDate);
+        put("transDateLocal", testDate);
+        put("acquierID", 1029);
+        put("extReference", 937278626262L);
+        put("cardTermId", "ATM-10101");
+        put("cardTermName", "DUB87");
+        put("msisdn", 353863579271L);
+        put("currencyCode", 840);
+        put("originalData", BigInteger.TEN);
+      }});
   }
 }

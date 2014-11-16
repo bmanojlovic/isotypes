@@ -12,7 +12,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -29,17 +28,15 @@ public class TestAutogen {
   @Resource
   private MessageFactory bankMessages;
 
-  private static final Matcher ExpectRequest = Pattern.compile(
+  private static final Pattern ExpectRequest = Pattern.compile(
       "0200F238801588E080100000000004000000195061189187162513461101010000002000000([0-9]{10})"
           + "([0-9]{6})10181812061206D00010000C00000000065890190611111100006702034117014641000000000000322"
-          + "PH Rumukrushi          Porthar      PHNG5660162012201220122012100551031385").matcher("");
+          + "PH Rumukrushi          Porthar      PHNG5660162012201220122012100551031385");
 
-  /**
-   * This test using a message schema that contains both default values (the processing code)
-   * and autogen instructions, to populate the transmission time with the current date/time,
-   * and the STAN field with a sequence f
-   * @throws IOException
-   */
+  /** This test using a message schema that contains both default values (the processing code)
+    * and autogen instructions, to populate the transmission time with the current date/time,
+    * and the STAN field with a sequence f
+    * @throws IOException */
   @Test
   public void messageGetsDefaultAndAutogenValue()
       throws IOException {
@@ -64,14 +61,14 @@ public class TestAutogen {
 
     final Message message = bankMessages.createByNames(MTI.create("0200"), params);
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    bankMessages.writeToStream(message, baos);
-    for (final String line : message.describe()) {
+    final Message sentMessage = message.withValues(bankMessages.writeToStream(message, baos));
+    for (final String line : sentMessage.describe()) {
       System.out.println(line);
     }
     final String messageText = baos.toString();
 
-    assertThat(message.validate(), empty());
-    assertThat(ExpectRequest.reset(messageText).matches(), is(true));
+    assertThat(sentMessage.validate(), empty());
+    assertThat(ExpectRequest.matcher(messageText).matches(), is(true));
 
   }
 

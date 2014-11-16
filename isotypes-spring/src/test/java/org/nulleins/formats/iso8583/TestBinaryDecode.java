@@ -1,5 +1,6 @@
 package org.nulleins.formats.iso8583;
 
+import com.google.common.collect.Maps;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nulleins.formats.iso8583.Message;
@@ -12,6 +13,7 @@ import javax.annotation.Resource;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.text.ParseException;
+import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -49,21 +51,22 @@ public class TestBinaryDecode {
 
     System.out.println(message.describe().toString());
 
-    assertThat((BigInteger)message.getFieldValue(3), is(BigInteger.valueOf(4000)));
-    assertThat((BigInteger)message.getFieldValue(3), is(BigInteger.valueOf(4000)));
-    assertThat((BigInteger)message.getFieldValue(11), is(BigInteger.valueOf(1638)));
-    assertThat((BigInteger)message.getFieldValue(22), is(BigInteger.valueOf(523)));
-    assertThat((BigInteger)message.getFieldValue(24), is(BigInteger.valueOf(3)));
-    assertThat((BigInteger)message.getFieldValue(25), is(BigInteger.ZERO));
-    final Object field35 = message.getFieldValue(35);
+    final Map<Integer, Object> results = Maps.transformValues(message.getFields(), Functions.fromOptional());
+    assertThat((BigInteger)results.get(3), is(BigInteger.valueOf(4000)));
+    assertThat((BigInteger)results.get(3), is(BigInteger.valueOf(4000)));
+    assertThat((BigInteger)results.get(11), is(BigInteger.valueOf(1638)));
+    assertThat((BigInteger)results.get(22), is(BigInteger.valueOf(523)));
+    assertThat((BigInteger)results.get(24), is(BigInteger.valueOf(3)));
+    assertThat((BigInteger)results.get(25), is(BigInteger.ZERO));
+    final Object field35 = results.get(35);
     assertThat(field35, instanceOf(TrackData.class));
     final TrackData track2data = (TrackData) field35;
     assertThat(track2data.getPrimaryAccountNumber(), is(371234567890006L));
     assertThat(track2data.getExpirationDate(), is(612));
     assertThat(track2data.getServiceCode(), is(101));
-    assertThat((String)message.getFieldValue(41), is("12345678"));
-    assertThat((String)message.getFieldValue(42), is("1234567896"));
-    assertThat((String)message.getFieldValue(62), is("001638"));
+    assertThat((String)results.get(41), is("12345678"));
+    assertThat((String)results.get(42), is("1234567896"));
+    assertThat((String)results.get(62), is("001638"));
   }
 
 

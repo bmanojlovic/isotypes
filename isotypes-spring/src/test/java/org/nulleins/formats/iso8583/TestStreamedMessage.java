@@ -1,5 +1,6 @@
 package org.nulleins.formats.iso8583;
 
+import com.google.common.collect.Maps;
 import org.joda.time.DateTime;
 import org.joda.time.LocalTime;
 import org.joda.time.format.DateTimeFormat;
@@ -57,20 +58,20 @@ public class TestStreamedMessage {
     final ByteArrayInputStream input = new ByteArrayInputStream(Payment_Request.getBytes());
 
     final Message response = factory.parse(input);
-
-    assertThat((BigInteger)response.getFieldValue(2), is(BigInteger.valueOf(5264391220494002L)));
-    assertThat((BigInteger)response.getFieldValue(3), is(BigInteger.valueOf(305700)));
-    assertThat((BigInteger)response.getFieldValue(4), is(BigInteger.valueOf(32000)));
-    assertThat((DateTime)response.getFieldValue(7), is(DATE10Formatter.parseDateTime("1210220213")));
-    assertThat((BigInteger)response.getFieldValue(11), is(BigInteger.valueOf(937166)));
-    assertThat((LocalTime)response.getFieldValue(12), is(TIME6Formatter.parseLocalTime("000213")));
-    assertThat((DateTime)response.getFieldValue(13), is(DATE4Formatter.parseDateTime("1211")));
-    assertThat((BigInteger)response.getFieldValue(32), is(BigInteger.valueOf(81800601368L)));
-    assertThat((BigInteger)response.getFieldValue(37), is(BigInteger.valueOf(34522937166L)));
-    assertThat((String)response.getFieldValue(41), is("CIB08520263"));
-    assertThat((String)response.getFieldValue(43), is("CIB-57357HOSPITAL     CAIRO          EG0"));
-    assertThat((BigInteger)response.getFieldValue(48), is(BigInteger.valueOf(20167124377L)));
-    assertThat((BigInteger)response.getFieldValue(49), is(BigInteger.valueOf(818)));
+    final Map<Integer, Object> results = Maps.transformValues(response.getFields(), Functions.fromOptional());
+    assertThat((BigInteger)results.get(2), is(BigInteger.valueOf(5264391220494002L)));
+    assertThat((BigInteger)results.get(3), is(BigInteger.valueOf(305700)));
+    assertThat((BigInteger)results.get(4), is(BigInteger.valueOf(32000)));
+    assertThat((DateTime)results.get(7), is(DATE10Formatter.parseDateTime("1210220213")));
+    assertThat((BigInteger)results.get(11), is(BigInteger.valueOf(937166)));
+    assertThat((LocalTime)results.get(12), is(TIME6Formatter.parseLocalTime("000213")));
+    assertThat((DateTime)results.get(13), is(DATE4Formatter.parseDateTime("1211")));
+    assertThat((BigInteger)results.get(32), is(BigInteger.valueOf(81800601368L)));
+    assertThat((BigInteger)results.get(37), is(BigInteger.valueOf(34522937166L)));
+    assertThat((String)results.get(41), is("CIB08520263"));
+    assertThat((String)results.get(43), is("CIB-57357HOSPITAL     CAIRO          EG0"));
+    assertThat((BigInteger)results.get(48), is(BigInteger.valueOf(20167124377L)));
+    assertThat((BigInteger)results.get(49), is(BigInteger.valueOf(818)));
   }
 
   @Test(expected = MessageException.class)
@@ -115,7 +116,7 @@ public class TestStreamedMessage {
     }};
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    factory.writeFromNumberMap(MTI.create("0200"), params, baos);
+    factory.writeFromNumberMap(MTI.create("0200"), Maps.transformValues(params, Functions.toOptional()), baos);
     assertThat(baos.toString(), is(Payment_Request));
   }
 

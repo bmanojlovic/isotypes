@@ -11,6 +11,7 @@ import org.nulleins.formats.iso8583.types.MTI;
 import java.io.ByteArrayInputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -37,7 +38,7 @@ public class ConfigTest {
     final URL configUrl = this.getClass().getResource("/"+CONFIG_PATH);
     final MessageFactory factory = MessageConfig.configure(configUrl);
     final MTI type = MTI.create(0x0200);
-    final Message message = factory.create(type);
+    final Message message = factory.create(type, Collections.EMPTY_MAP);
     assertThat(message.getMTI(), is(type));
     assertThat(message.getHeader(), is("ISO015000077"));
   }
@@ -76,7 +77,7 @@ public class ConfigTest {
     final ByteArrayInputStream bais = new ByteArrayInputStream(SampleConfig.getBytes());
     final MessageFactory factory = MessageConfig.configure(bais);
     final MTI type = MTI.create(0x0200);
-    final Message message = factory.create(type);
+    final Message message = factory.create(type, Collections.EMPTY_MAP);
     assertThat(message.getMTI(), is(type));
     assertThat(message.getHeader(), is("ISO015000077"));
   }

@@ -33,7 +33,7 @@ public class TestMessageTemplate {
   @Test
   public void testCreateMessageTemplate() {
     final MessageTemplate template = MessageTemplate.create("ISO015000077", PaymentRequest, BitmapType.BINARY);
-    assertThat(template.getMessageTypeIndicator(), is(PaymentRequest));
+    assertThat(template.getMessageType(), is(PaymentRequest));
     assertThat(template.getHeader(), is("ISO015000077"));
     final FieldTemplate.Builder builder = FieldTemplate.localBuilder(template).get();
     final Map<Integer, FieldTemplate> fields = new HashMap<Integer, FieldTemplate>() {{
@@ -82,7 +82,7 @@ public class TestMessageTemplate {
   public void validationDetectsMTIMismatch() {
     final MTI messageType = MTI.create(0x0200);
     final Message subject = Message.Builder()
-        .messageTypeIndicator(messageType)
+        .messageType(messageType)
         .header("ISO015000077")
         .template(factory.getTemplate(messageType))
         .build();
@@ -96,7 +96,7 @@ public class TestMessageTemplate {
   public void validationDetectsHeaderMismatch() {
     final MTI messageType = MTI.create(0x0400);
     final Message subject = Message.Builder()
-        .messageTypeIndicator(messageType)
+        .messageType(messageType)
         .header("ISO015000088")
         .template(factory.getTemplate(messageType))
         .build();
@@ -109,12 +109,15 @@ public class TestMessageTemplate {
   @Test
   public void validationDetectsInvalidFieldValue() {
     final MTI messageType = MTI.create(0x0400);
+    final HashMap<Integer, Object> fields = new HashMap<Integer,Object>() {{
+      put(2, "ABC");
+    }};
     final Message subject = Message.Builder()
-        .messageTypeIndicator(messageType)
+        .messageType(messageType)
         .header("ISO015000077")
         .template(factory.getTemplate(messageType))
+        .fields(fields)
         .build();
-    subject.setFieldValue(2, "ABC");
     final List<String> errors = factory.getTemplate(MTI.create(0x0200)).validate(subject);
     assertThat(errors.size(), is(2));
     System.out.println(errors);

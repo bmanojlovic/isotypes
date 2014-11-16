@@ -1,5 +1,6 @@
 package org.nulleins.formats.iso8583;
 
+import com.google.common.collect.Maps;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nulleins.formats.iso8583.types.CardAcceptorLocation;
@@ -42,8 +43,9 @@ public class TestBank {
           + "C0000000000001001566C0000024260260162012201220122012100551031385";
 
   @Test
-  public void testCreateMessage() throws ParseException, IOException {
-    final Map<String, Object> params = new HashMap<String, Object>() {{
+  public void testCreateMessage()
+      throws ParseException, IOException {
+    Map<String, Object> params = new HashMap<String, Object>() {{
       put("accountNumber", 5061189187162513461L);
       put("processingCode", "011000");
       put("amount", 2000000);
@@ -65,17 +67,17 @@ public class TestBank {
       put("accountId1", "0551031385");
     }};
 
-    final Message message = bankMessages.createByNames(MTI.create("0200"), params);
-    final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    Message message = bankMessages.createByNames(MTI.create("0200"), params);
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
     bankMessages.writeToStream(message, baos);
-    final String messageText = baos.toString();
+    String messageText = baos.toString();
 
     assertThat(message.validate(), empty());
     assertThat(messageText, is(ExpectRequest));
 
     // parse the message back as a map:
-    final Message readback = bankMessages.parse(messageText.getBytes());
-    final Map<Integer, Object> outParams = readback.getFields();
+    Message readback = bankMessages.parse(messageText.getBytes());
+    Map<Integer, Object> outParams = new HashMap<>(Maps.transformValues(readback.getFields(), Functions.fromOptional()));
     assertThat(readback.validate(), empty());
 
     assertThat((BigInteger)outParams.get(2), is(BigInteger.valueOf(5061189187162513461L)));
@@ -93,9 +95,9 @@ public class TestBank {
     assertThat(outParams.get(37).toString(), is("000067020341"));
     assertThat(outParams.get(41).toString(), is("17014641"));
     assertThat(outParams.get(42).toString(), is("000000000000322"));
-    final Object f43 = outParams.get(43);
+    Object f43 = outParams.get(43);
     assertThat(f43, instanceOf(CardAcceptorLocation.class));
-    final CardAcceptorLocation cal = (CardAcceptorLocation) f43;
+    CardAcceptorLocation cal = (CardAcceptorLocation) f43;
     assertThat(cal.getLocation(), is("PH Rumukrushi"));
     assertThat(cal.getCity(), is("Porthar"));
     assertThat(cal.getState(), is("PH"));
@@ -104,8 +106,8 @@ public class TestBank {
     assertThat(outParams.get(60).toString(), is("2012201220122012"));
     assertThat(outParams.get(102).toString(), is("0551031385"));
 
-    final MTI responseType = MTI.create("0210");
-    final PostilionAddAmount[] addAmount = new PostilionAddAmount[3];
+    MTI responseType = MTI.create("0210");
+    PostilionAddAmount[] addAmount = new PostilionAddAmount[3];
     addAmount[0] = new PostilionAddAmount(10, 2, 566, new BigInteger("2426026"));
     addAmount[1] = new PostilionAddAmount(10, 3, 566, BigInteger.ZERO);
     addAmount[2] = new PostilionAddAmount(10, 1, 566, new BigInteger("2426026"));
@@ -113,11 +115,11 @@ public class TestBank {
 
     outParams.put(54, addAmount);
 
-    final Message response = bankMessages.createByNumbers(responseType, outParams);
+    Message response = bankMessages.createByNumbers(responseType, outParams);
     assertThat(response.validate(), empty());
-    final ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
-    bankMessages.writeToStream(response, baos2);
-    final String responseMessage = baos2.toString();
+    baos = new ByteArrayOutputStream();
+    bankMessages.writeToStream(response, baos);
+    String responseMessage = baos.toString();
     assertThat(responseMessage, is(ExpectResponse));
   }
 

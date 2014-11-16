@@ -1,5 +1,6 @@
 package org.nulleins.formats.iso8583;
 
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import org.nulleins.formats.iso8583.formatters.TypeFormatter;
 import org.nulleins.formats.iso8583.types.Bitmap;
@@ -71,7 +72,7 @@ public class MessageTemplate {
     return header != null ? header : schema.getHeader();
   }
 
-  public MTI getMessageTypeIndicator() {
+  public MTI getMessageType() {
     return type;
   }
 
@@ -165,11 +166,11 @@ public class MessageTemplate {
       if (field.isOptional()) {
         continue;
       }
-      final Object msgField = message.getFields().get(field.getNumber());
-      if (msgField == null) {
+      final Optional<Object> msgField = message.getFields().get(field.getNumber());
+      if (msgField == null || !msgField.isPresent()) {
         result.add("Message field missing (" + field + ")");
-      } else if (!field.validValue(msgField)) {
-        result.add("Message field data invalid (" + msgField + ") for field: " + field);
+      } else if (!field.validValue(msgField.get())) {
+        result.add("Message field data invalid (" + msgField.get() + ") for field: " + field);
       }
     }
     return result;

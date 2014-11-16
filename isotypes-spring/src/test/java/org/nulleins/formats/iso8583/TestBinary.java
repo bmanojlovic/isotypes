@@ -39,21 +39,22 @@ public class TestBinary {
     final Date testDate = (new SimpleDateFormat("ddMMyyyy:HHmmss")).parse("12122012:121200");
     // create a request message with binary bitmap and bcd encoded content
     // as specified in the iso:schema (see associated TestBinary-context.xml)
-    final Message request = factory.create(MTI.create(0x0200));
-    request.setFieldValue(2, 5432818929192L);
-    request.setFieldValue(3, 1010);
-    request.setFieldValue(4, new BigInteger("1200"));
-    request.setFieldValue(7, testDate);
-    request.setFieldValue(11, 666666);
-    request.setFieldValue(12, testDate);
-    request.setFieldValue(13, testDate);
-    request.setFieldValue(32, 1029);
-    request.setFieldValue(37, 937278626262L);
-    request.setFieldValue(41, "ATM-10101");
-    request.setFieldValue(43, "DUB87");
-    request.setFieldValue(48, 353863579271L);
-    request.setFieldValue(49, 840);
-    request.setFieldValue(90, BigInteger.TEN);
+    final Message request = factory.create(MTI.create(0x0200), new HashMap<Integer,Object>() {{
+      put(2, 5432818929192L);
+      put(3, 1010);
+      put(4, new BigInteger("1200"));
+      put(7, testDate);
+      put(11, 666666);
+      put(12, testDate);
+      put(13, testDate);
+      put(32, 1029);
+      put(37, 937278626262L);
+      put(41, "ATM-10101");
+      put(43, "DUB87");
+      put(48, 353863579271L);
+      put(49, 840);
+      put(90, BigInteger.TEN);
+      }});
 
     final byte[] expectData = {
         0x02, 0x00, (byte) 0xf2, 0x38, 0x00, 0x01, 0x08, (byte) 0xa1, (byte) 0x80, 0x00, 0x00, 0x00, 0x00, 0x40, 0x00, 0x00,
@@ -84,12 +85,13 @@ public class TestBinary {
 		 * http://www.chileoffshore.com/en/interesting-articles/115-about-iso8583
 		 */
 
-    final Message request = factory.create(MTI.create(0x0220));
-    request.setFieldValue(2, "1234567890123456");
-    request.setFieldValue(7, "0609173030");
-    request.setFieldValue(22, "ABC123");
-    request.setFieldValue(63, "012345678901234567890123456789012345678901234567890"
+    final Message request = factory.create(MTI.create(0x0220), new HashMap<Integer,Object>() {{
+      put(2, "1234567890123456");
+      put(7, "0609173030");
+      put(22, "ABC123");
+      put(63, "012345678901234567890123456789012345678901234567890"
         + "1234567890123456789012345678901234567890123456789");
+    }});
 
     final byte[] data = factory.getMessageData(request);
 

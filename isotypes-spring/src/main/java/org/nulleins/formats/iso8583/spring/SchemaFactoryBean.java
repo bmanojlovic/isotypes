@@ -92,7 +92,7 @@ public class SchemaFactoryBean implements FactoryBean<MessageFactory> {
       if (message.getFields().containsKey(field.getNumber())) {
         throw new IllegalStateException("duplicate field f: "
             + field.getNumber() + " defined for Message type "
-            + message.getMessageTypeIndicator());
+            + message.getMessageType());
       }
       field.setMessageTemplate(message);
       message.addField(field);

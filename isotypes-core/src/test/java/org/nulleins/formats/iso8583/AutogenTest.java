@@ -1,5 +1,6 @@
 package org.nulleins.formats.iso8583;
 
+import com.google.common.base.Optional;
 import org.junit.Test;
 import org.nulleins.formats.iso8583.types.BitmapType;
 import org.nulleins.formats.iso8583.types.MTI;
@@ -30,7 +31,7 @@ public class AutogenTest {
   public void factoryErrors() {
     final AutoGeneratorFactory factory = new AutoGeneratorFactory(null);
     assertThat(factory.generate("", field), is(nullValue()));
-    assertThat(factory.generate("x", field), is(nullValue()));
+    assertThat(factory.generate("x", field), is(Optional.absent()));
     assertThat(factory.generate("#", field), is(nullValue()));
   }
 }
