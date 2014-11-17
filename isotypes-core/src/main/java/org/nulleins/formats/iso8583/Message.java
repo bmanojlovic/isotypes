@@ -18,7 +18,6 @@ import java.util.Map;
  * and its content
  * @author phillipsr */
 public final class Message implements Comparable<Message> {
-  private final MTI messageType;
   private final Map<Integer, Optional<Object>> fields;
   private final String header;
   private final MessageTemplate template;
@@ -29,15 +28,15 @@ public final class Message implements Comparable<Message> {
    * @throws IllegalArgumentException if the supplied MTI is null */
   private Message(final MessageTemplate template, final String header, final Map<Integer, Optional<Object>> fieldValues) {
     Preconditions.checkNotNull(template, "Template cannot be null");
+    Preconditions.checkNotNull(header, "Header cannot be null");
+    Preconditions.checkNotNull(fieldValues, "Fields cannot be null");
     this.template = template;
-    this.messageType = template.getMessageType();
     this.header = header;
     this.fields = fieldValues;
   }
 
   public static Message create(final MessageTemplate template, final String header, final Map<Integer, Object> fieldValues) {
     return Builder()
-        .messageType(template.getMessageType())
         .header(header)
         .template(template)
         .fields(fieldValues)
@@ -46,7 +45,7 @@ public final class Message implements Comparable<Message> {
 
   /** Answer with this message's MTI */
   public MTI getMTI() {
-    return messageType;
+    return template.getMessageType();
   }
 
   public String getHeader() {
@@ -84,19 +83,14 @@ public final class Message implements Comparable<Message> {
   /** @return a summary of this field, for logging purposes */
   @Override
   public String toString() {
-    return "Message mti=" + messageType + " header=" + this.getHeader() + " #field=" + fields.size();
+    return "Message mti=" + template.getMessageType() + " header=" + this.getHeader() + " #field=" + fields.size();
   }
 
   public Message asType(final MessageTemplate template, final Map<Integer,Object> fields) {
     final Map<Integer, Object> mergedFields = new HashMap<>();
     mergedFields.putAll(Maps.transformValues(this.fields,Functions.fromOptional()));
     mergedFields.putAll(fields);
-    return Builder()
-        .messageType(template.getMessageType())
-        .header(header)
-        .template(template)
-        .fields(mergedFields)
-        .build();
+    return Message.create(template,header,mergedFields);
   }
 
   /** @return an iterator to iterate over the multi-line desc of this message,
@@ -122,12 +116,7 @@ public final class Message implements Comparable<Message> {
   }
 
   public Message withValues(final Map<Integer, Optional<Object>> fieldValues) {
-    return Builder()
-        .messageType(messageType)
-        .header(header)
-        .template(template)
-        .optionalFields(fieldValues)
-        .build();
+    return new Message(template,header,fieldValues);
   }
 
   public Message mergeValues(final Map<Integer, Optional<Object>> fieldValues) {
@@ -135,12 +124,7 @@ public final class Message implements Comparable<Message> {
       putAll(fields);
       putAll(Maps.transformValues(fieldValues, Functions.toOptional()));
     }};
-    return Builder()
-        .messageType(messageType)
-        .header(header)
-        .template(template)
-        .optionalFields(fieldValues)
-        .build();
+    return Message.create(template,header,mergedFields);
   }
 
   /** @return a new builder, for constructing messages */
@@ -149,15 +133,9 @@ public final class Message implements Comparable<Message> {
   }
 
   public static class Builder {
-    private MTI messageTypeIndicator;
+    private MessageTemplate template;
     private String header;
     private Map<Integer, Optional<Object>> fields = Collections.emptyMap();
-    private MessageTemplate template;
-
-    public Builder messageType(final MTI code) {
-      this.messageTypeIndicator = code;
-      return this;
-    }
 
     public Builder header(final String header) {
       this.header = header;
@@ -193,7 +171,7 @@ public final class Message implements Comparable<Message> {
     }
     final Message message = (Message) other;
 
-    if (!messageType.equals(message.messageType)) {
+    if (!template.getMessageType().equals(message.getMTI())) {
       return false;
     }
 
@@ -212,7 +190,7 @@ public final class Message implements Comparable<Message> {
 
   @Override
   public int hashCode() {
-    int result = messageType.hashCode();
+    int result = template.getBitmap().hashCode();
     result = 31 * result + fields.hashCode();
     result = 31 * result + header.hashCode();
     return result;

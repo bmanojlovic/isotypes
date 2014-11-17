@@ -82,7 +82,6 @@ public class TestMessageTemplate {
   public void validationDetectsMTIMismatch() {
     final MTI messageType = MTI.create(0x0200);
     final Message subject = Message.Builder()
-        .messageType(messageType)
         .header("ISO015000077")
         .template(factory.getTemplate(messageType))
         .build();
@@ -96,7 +95,6 @@ public class TestMessageTemplate {
   public void validationDetectsHeaderMismatch() {
     final MTI messageType = MTI.create(0x0400);
     final Message subject = Message.Builder()
-        .messageType(messageType)
         .header("ISO015000088")
         .template(factory.getTemplate(messageType))
         .build();
@@ -113,7 +111,6 @@ public class TestMessageTemplate {
       put(2, "ABC");
     }};
     final Message subject = Message.Builder()
-        .messageType(messageType)
         .header("ISO015000077")
         .template(factory.getTemplate(messageType))
         .fields(fields)

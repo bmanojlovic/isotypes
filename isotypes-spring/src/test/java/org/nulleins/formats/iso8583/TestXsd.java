@@ -173,7 +173,7 @@ public class TestXsd {
     final String messageText = new String(messages.getMessageData(message));
 
     assertThat(messageText, is(ExpectedBeanMessage));
-    final Message response = messages.transform(MTI.create(0x0400),message,
+    final Message response = messages.transform(MTI.create(0x0400), message,
         new HashMap<String, Object>() {{
           put("currencyCode2", 885);
           put("currencyCode3", 350);

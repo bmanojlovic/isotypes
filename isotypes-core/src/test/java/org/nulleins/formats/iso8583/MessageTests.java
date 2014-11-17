@@ -51,26 +51,21 @@ public class MessageTests {
 
     final MTI mt1 = MTI.create(0x0400);
     message400 = Message.Builder()
-        .messageType(mt1)
         .template(factory.getTemplate(mt1))
         .build();
     final MTI mt2 = MTI.create(0x0410);
     message410 = Message.Builder()
-        .messageType(mt2)
         .template(factory.getTemplate(mt2))
         .build();
     final MTI mt3 = MTI.create(0x0210);
     message210 = Message.Builder()
-        .messageType(mt3)
         .template(factory.getTemplate(mt3))
         .build();
     final MTI mt4 = MTI.create(0x0200);
     message200 = Message.Builder()
-        .messageType(mt4)
         .template(factory.getTemplate(mt4))
         .build();
     message200_2 = Message.Builder()
-        .messageType(mt4)
         .header("ISO015000077")
         .template(factory.getTemplate(mt4))
         .build();
@@ -96,13 +91,11 @@ public class MessageTests {
       put(2,1);
     }};
     final Message first = Message.Builder()
-        .messageType(mti)
         .header("ISO015000077")
         .template(factory.getTemplate(mti))
         .fields(field1)
         .build();
     final Message second = Message.Builder()
-        .messageType(mti)
         .header("ISO015000077")
         .template(factory.getTemplate(mti))
         .fields(field2)
@@ -121,13 +114,11 @@ public class MessageTests {
       put(2,2);
     }};
     final Message first = Message.Builder()
-        .messageType(mti)
         .header("ISO015000077")
         .template(factory.getTemplate(mti))
         .fields(field1)
         .build();
     final Message second = Message.Builder()
-        .messageType(mti)
         .header("ISO015000077")
         .template(factory.getTemplate(mti))
         .fields(field2)

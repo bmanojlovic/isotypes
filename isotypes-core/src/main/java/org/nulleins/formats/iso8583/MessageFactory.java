@@ -391,33 +391,29 @@ public class MessageFactory {
     return Message.create(template,template.getHeader(), fields);
   }
 
+  /** @return transform <code>original</code> message to the <code>messageType</code> specified
+   * (usually a response), setting its fields from the other fields ("move-corresponding" semantics),
+   * and adding new fields that may be required in the new message
+   * @param messageType    type of target message
+   * @param original message to duplicate
+   * @param extraFields required for new message */
   public Message transform(final MTI messageType, final Message original, final HashMap<String, Object> extraFields) {
     final MessageTemplate template = templates.get(messageType);
     final Map<Integer, Object> fieldValues = new HashMap<Integer, Object>() {{
-      putAll(original.getFields());
       putAll(Maps.transformEntries(template.getFields(), mapValuesByName(extraFields)));
+      putAll(Maps.transformValues(Maps.filterEntries(original.getFields(),
+          new Predicate<Entry<Integer, Optional<Object>>>() {
+            @Override
+            public boolean apply(final Entry<Integer, Optional<Object>> input) {
+              return template.isFieldPresent(input.getKey());
+            }
+          }), Functions.fromOptional()));
     }};
     return Message.Builder()
-        .messageType(messageType)
-        .header(original.getHeader())
         .template(template)
+        .header(original.getHeader())
         .fields(fieldValues)
         .build();
-  }
-
-  /** @return a duplicate of <code>source</code>, but using the <code>messageType</code> specified
-   * (usually a response), setting its fields from the other fields ("move-corresponding" semantics)
-   * <p/>
-   * Note: message unlikely to be valid until fields add/removed
-   * @param messageType    type of target message
-   * @param source message to duplicate
-   * @throws IllegalArgumentException if the mti supplied is not defined in this factory's schema */
-  public Message duplicate(final MTI messageType, final Message source) {
-    Preconditions.checkArgument(templates.containsKey(messageType), "Message type [" + messageType + "] not defined in factory");
-    final MessageTemplate template = templates.get(messageType);
-    final Map<Integer, Object> fields = Maps.transformEntries(
-        Maps.filterEntries(template.getFields(), fieldPresent(source)), mapValuesByNumber(source));
-    return source.asType(template, fields);
   }
 
   /** @return predicate evaluating to true if field present in both <code>message</code> and <code>template</code> */
@@ -455,7 +451,7 @@ public class MessageFactory {
         try {
           return PropertyUtils.getProperty(bean, field.getName());
         } catch (final Exception e) {
-          return null;//Throwables.propagate(e);
+          return null;
         }
       }
     };

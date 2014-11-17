@@ -41,9 +41,8 @@ public class MessageBuilderTest {
     }};
     final MTI messageType = MTI.create(0x0210);
     final Message subject = Message.Builder()
-        .messageType(messageType)
-        .header("ISO015000077")
         .template(factory.getTemplate(messageType))
+        .header("ISO015000077")
         .fields(fields)
         .build();
 
