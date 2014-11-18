@@ -1,4 +1,4 @@
-package org.nulleins.formats.iso8583.model;
+package org.nulleins.formats.iso8583;
 
 import java.math.BigInteger;
 

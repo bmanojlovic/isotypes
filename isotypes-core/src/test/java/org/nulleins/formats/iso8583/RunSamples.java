@@ -2,7 +2,6 @@ package org.nulleins.formats.iso8583;
 
 import org.junit.Test;
 import org.nulleins.formats.iso8583.model.CardNumber;
-import org.nulleins.formats.iso8583.model.PaymentRequestBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 

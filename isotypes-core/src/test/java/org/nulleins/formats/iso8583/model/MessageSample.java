@@ -1,7 +1,11 @@
-package org.nulleins.formats.iso8583;
+package org.nulleins.formats.iso8583.model;
 
+import org.nulleins.formats.iso8583.Message;
+import org.nulleins.formats.iso8583.MessageException;
+import org.nulleins.formats.iso8583.MessageFactory;
+import org.nulleins.formats.iso8583.PaymentRequestBean;
+import org.nulleins.formats.iso8583.TrackData;
 import org.nulleins.formats.iso8583.TrackData.Track;
-import org.nulleins.formats.iso8583.model.PaymentRequestBean;
 import org.nulleins.formats.iso8583.types.MTI;
 
 import java.io.IOException;
