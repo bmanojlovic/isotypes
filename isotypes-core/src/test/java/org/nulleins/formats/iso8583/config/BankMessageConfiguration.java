@@ -81,4 +81,68 @@ public class BankMessageConfiguration {
 
   }
 
+  public static MessageFactory createSolabFactory() {
+
+    final MessageTemplate requestMessageTemplate = MessageTemplate.create("ISO015000050", MTI.create(0x0200), BitmapType.HEX);
+    requestMessageTemplate.setName("Transaction Request");
+    final FieldTemplate.Builder requestBuilder = FieldTemplate.localBuilder(requestMessageTemplate).get();
+    requestMessageTemplate.setFields(asList(
+        requestBuilder.f(3).name("procCode").desc("Processing Code").dim("fixed(6)").type("n").build(),
+        requestBuilder.f(4).name("amount").desc("Amount, transaction (cents)").dim("fixed(12)").type("n").build(),
+        requestBuilder.f(7).name("date").desc("Transmission Date and Time").dim("fixed(10)").type("date").build(),
+        requestBuilder.f(11).name("trace").desc("System Trace Audit Number").dim("fixed(6)").type("n").build(),
+        requestBuilder.f(12).name("time").desc("Time, local transaction").dim("fixed(6)").type("time").build(),
+        requestBuilder.f(13).name("dateIssued").desc("Date, local transaction").dim("fixed(4)").type("date").build(),
+        requestBuilder.f(15).name("limitDate").desc("Date, capture").dim("fixed(4)").type("date").build(),
+        requestBuilder.f(17).name("expirationDate").desc("Card expiration date").dim("fixed(4)").type("date").build(),
+        requestBuilder.f(32).name("acquierID").desc("Acquiring Institution ID").dim("llvar(11)").type("n").build(),
+        requestBuilder.f(35).name("forwarderID").desc("Forwarding Institution ID").dim("llvar(20)").type("ans").build(),
+        requestBuilder.f(37).name("reference").desc("Retrieval Reference Number").dim("fixed(12)").type("n").build(),
+        requestBuilder.f(41).name("termId").desc("Card Acceptor Terminal ID").dim("fixed(10)").type("ans").build(),
+        requestBuilder.f(43).name("cardAcceptorLoc").desc("Card Acceptor Location Name").dim("fixed(23)").type("ans").build(),
+        requestBuilder.f(48).name("comment").desc("Comment").dim("lllvar(10)").type("an").build(),
+        requestBuilder.f(49).name("currency").desc("Currency Code, Transaction").dim("fixed(3)").type("an").build(),
+        requestBuilder.f(60).name("adviceCode").desc("Advice/reason code").dim("lllvar(999)").type("ans").build(),
+        requestBuilder.f(61).name("extraCode").desc("Additional code").dim("lllvar(999)").type("an").build(),
+        requestBuilder.f(100).name("field100").desc("F100").dim("llvar(10)").type("an").build(),
+        requestBuilder.f(102).name("field102").desc("F102").dim("llvar(10)").type("an").build()));
+
+    final MessageTemplate responseMessageTemplate = MessageTemplate.create("ISO015000055", MTI.create(0x0210), BitmapType.HEX);
+    final FieldTemplate.Builder responseBuilder = FieldTemplate.localBuilder(responseMessageTemplate).get();
+    responseMessageTemplate.setFields(asList(
+        responseBuilder.f(3).name("procCode").desc("Processing Code").dim("fixed(6)").type("n").build(),
+        responseBuilder.f(4).name("amount").desc("Amount, transaction (cents)").dim("fixed(12)").type("n").build(),
+        responseBuilder.f(7).name("date").desc("Transmission Date and Time").dim("fixed(10)").type("date").build(),
+        responseBuilder.f(11).name("trace").desc("System Trace Audit Number").dim("fixed(6)").type("n").build(),
+        responseBuilder.f(12).name("time").desc("Time, local transaction").dim("fixed(6)").type("time").build(),
+        responseBuilder.f(13).name("dateIssued").desc("Date, local transaction").dim("fixed(4)").type("date").build(),
+        responseBuilder.f(15).name("limitDate").desc("Date, capture").dim("fixed(4)").type("date").build(),
+        responseBuilder.f(17).name("expirationDate").desc("Card expiration date").dim("fixed(4)").type("date").build(),
+        responseBuilder.f(32).name("acquierID").desc("Acquiring Institution ID").dim("llvar(11)").type("n").build(),
+        responseBuilder.f(35).name("forwarderID").desc("Forwarding Institution ID").dim("llvar(20)").type("ans").build(),
+        responseBuilder.f(37).name("reference").desc("Retrieval Reference Number").dim("fixed(12)").type("n").build(),
+        responseBuilder.f(38).name("reference").desc("Retrieval Reference Number").dim("fixed(6)").type("n").build(),
+        responseBuilder.f(39).name("reference").desc("Retrieval Reference Number").dim("fixed(2)").type("ans").build(),
+        responseBuilder.f(41).name("termId").desc("Card Acceptor Terminal ID").dim("fixed(10)").type("ans").build(),
+        responseBuilder.f(43).name("cardAcceptorLoc").desc("Card Acceptor Location Name").dim("fixed(23)").type("ans").build(),
+        responseBuilder.f(48).name("comment").desc("Comment").dim("lllvar(10)").type("an").build(),
+        responseBuilder.f(49).name("currency").desc("Currency Code, Transaction").dim("fixed(3)").type("an").build(),
+        responseBuilder.f(60).name("adviceCode").desc("Advice/reason code").dim("lllvar(999)").type("ans").build(),
+        responseBuilder.f(61).name("extraCode").desc("Additional code").dim("lllvar(999)").type("ans").build(),
+        responseBuilder.f(70).name("extraCode").desc("Additional code").dim("fixed(3)").type("an").build(),
+        responseBuilder.f(90).name("extraCode").desc("Additional code").dim("fixed(19)").type("ans").build(),
+        responseBuilder.f(100).name("field100").desc("F100").dim("llvar(10)").type("an").build(),
+        responseBuilder.f(102).name("field100").desc("F100").dim("llvar(10)").type("an").build(),
+        responseBuilder.f(126).name("accountNumber").desc("Primary Account Number").dim("lllvar(99)").type("ans").build()));
+
+    return MessageFactory.Builder()
+        .id("messageSet")
+        .contentType(ContentType.TEXT)
+        .bitmapType(BitmapType.HEX)
+        .autogen(new AutoGeneratorFactory(new StanGenerator(1, 999)))
+        .templates(asList(requestMessageTemplate, responseMessageTemplate))
+        .build();
+
+  }
+
 }

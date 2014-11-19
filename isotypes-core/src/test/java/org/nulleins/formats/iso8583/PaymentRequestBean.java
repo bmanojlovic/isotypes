@@ -1,5 +1,7 @@
 package org.nulleins.formats.iso8583;
 
+import org.nulleins.formats.iso8583.model.CardNumber;
+
 import java.math.BigInteger;
 
 public class PaymentRequestBean {

@@ -17,7 +17,7 @@ import java.util.Map;
   * content representation and the fields it can contain
   * @author phillipsr */
 public class MessageTemplate {
-  /** ID of the message template instance (used by Spring */
+  /** ID of the message template instance (used by Spring) */
   private String id;
   /** name of the template (i.e., the message it represents) */
   private String name;
@@ -88,12 +88,10 @@ public class MessageTemplate {
     return fields;
   }
 
-  /**
-   * Set the definition of the fields to be used in this message template,
+  /** Set the definition of the fields to be used in this message template,
    * and calculate the bitmap describing their presence or otherwise, for
    * all potential 192 fields (primary, secondary and tertiary bitmaps)
-   * @param fields Field-f keyed map of field templates
-   */
+   * @param fields Field-f keyed map of field templates */
   public void setFields(final Map<Integer, FieldTemplate> fields) {
     this.fields = fields;
     bitmap.clear();
@@ -181,11 +179,8 @@ public class MessageTemplate {
     return bitmap.isFieldPresent(fieldNumber);
   }
 
-  /**
-   * Answer with the field f mapped to the supplied field name
-   * @param fieldName to lookup
-   * @return field f
-   */
+  /** @return the field number mapped to the supplied field name
+   * @param fieldName to lookup */
   int getFieldNumberForName(final String fieldName) {
     if (!nameIndex.containsKey(fieldName)) {
       throw new NoSuchFieldError(fieldName);

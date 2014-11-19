@@ -1,9 +1,9 @@
 package org.nulleins.formats.iso8583;
 
 import org.junit.Test;
+import org.nulleins.formats.iso8583.config.SampleMessageConfiguration;
 import org.nulleins.formats.iso8583.model.CardNumber;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.nulleins.formats.iso8583.model.MessageSample;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -15,7 +15,7 @@ import static org.junit.Assert.fail;
  * @author phillipsr
  */
 public class RunSamples {
-  private static final String SampleContextPath = "classpath:org/nulleins/formats/iso8583/samples/MessageSample-context.xml";
+  private final MessageFactory factory = SampleMessageConfiguration.createMessageFactory();
 
   /** Business-significant fields to include in message */
   private static final PaymentRequestBean Request = new PaymentRequestBean() {{
@@ -33,8 +33,7 @@ public class RunSamples {
 
   @Test
   public void runSamples() throws IOException, ParseException {
-    final ApplicationContext context = new ClassPathXmlApplicationContext(SampleContextPath);
-    final MessageSample sample = new MessageSample(context.getBean("sampleMessages",MessageFactory.class));
+    final MessageSample sample = new MessageSample(factory);
 
     try {
       sample.sendMessage(0x0200, Request);

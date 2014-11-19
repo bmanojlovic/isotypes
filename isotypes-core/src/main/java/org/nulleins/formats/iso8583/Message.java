@@ -1,13 +1,14 @@
 package org.nulleins.formats.iso8583;
 
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import org.apache.commons.collections.ListUtils;
 import org.nulleins.formats.iso8583.types.MTI;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,19 +29,10 @@ public final class Message implements Comparable<Message> {
    * @throws IllegalArgumentException if the supplied MTI is null */
   private Message(final MessageTemplate template, final String header, final Map<Integer, Optional<Object>> fieldValues) {
     Preconditions.checkNotNull(template, "Template cannot be null");
-    Preconditions.checkNotNull(header, "Header cannot be null");
     Preconditions.checkNotNull(fieldValues, "Fields cannot be null");
     this.template = template;
-    this.header = header;
-    this.fields = fieldValues;
-  }
-
-  public static Message create(final MessageTemplate template, final String header, final Map<Integer, Object> fieldValues) {
-    return Builder()
-        .header(header)
-        .template(template)
-        .fields(fieldValues)
-        .build();
+    this.header = header != null ? header : template.getHeader();
+    this.fields = ImmutableMap.copyOf(fieldValues);
   }
 
   /** Answer with this message's MTI */
@@ -86,13 +78,6 @@ public final class Message implements Comparable<Message> {
     return "Message mti=" + template.getMessageType() + " header=" + this.getHeader() + " #field=" + fields.size();
   }
 
-  public Message asType(final MessageTemplate template, final Map<Integer,Object> fields) {
-    final Map<Integer, Object> mergedFields = new HashMap<>();
-    mergedFields.putAll(Maps.transformValues(this.fields,Functions.fromOptional()));
-    mergedFields.putAll(fields);
-    return Message.create(template,header,mergedFields);
-  }
-
   /** @return an iterator to iterate over the multi-line desc of this message,
    * including message type information, field type information and field values */
   public Iterable<String> describe() {
@@ -119,14 +104,6 @@ public final class Message implements Comparable<Message> {
     return new Message(template,header,fieldValues);
   }
 
-  public Message mergeValues(final Map<Integer, Optional<Object>> fieldValues) {
-    final Map<Integer, Object> mergedFields = new HashMap<Integer, Object>() {{
-      putAll(fields);
-      putAll(Maps.transformValues(fieldValues, Functions.toOptional()));
-    }};
-    return Message.create(template,header,mergedFields);
-  }
-
   /** @return a new builder, for constructing messages */
   public static Builder Builder() {
     return new Builder();
@@ -148,7 +125,7 @@ public final class Message implements Comparable<Message> {
     }
 
     public Builder fields(final Map<Integer, Object> fields) {
-      return optionalFields(Maps.transformValues(fields, Functions.toOptional()));
+      return optionalFields(Maps.transformValues(fields, toOptional()));
     }
 
     public Builder optionalFields(final Map<Integer, Optional<Object>> fields) {
@@ -159,6 +136,15 @@ public final class Message implements Comparable<Message> {
     public Message build() {
       return new Message(template, header, fields);
     }
+  }
+
+  public static Function<Object,Optional<Object>> toOptional() {
+    return new Function<Object,Optional<Object>>() {
+      @Override
+      public Optional<Object> apply(final Object input) {
+        return Optional.fromNullable(input);
+      }
+    };
   }
 
   @Override

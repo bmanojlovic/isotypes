@@ -117,7 +117,7 @@ public class TestDateTypes {
   }
 
   @Test
-  public void testFormatSqlDate()
+  public void testFormatSqlTime()
       throws ParseException {
     final DateFormat df = new SimpleDateFormat("HH:mm:ss");
     final java.sql.Date time = new java.sql.Date(df.parse("19:26:07").getTime());
@@ -125,6 +125,17 @@ public class TestDateTypes {
 
     assertThat(data.length, is(6));
     assertThat(new String(data), is("192607"));
+  }
+
+  @Test
+  public void testFormatSqlDate()
+      throws ParseException {
+    final DateFormat df = new SimpleDateFormat("dd/MM/yy");
+    final java.sql.Date time = new java.sql.Date(df.parse("12/03/14").getTime());
+    final byte[] data = dateFormatter.format(FieldType.DATE, time, Dimension.parse("FIXED(4)"));
+
+    assertThat(data.length, is(4));
+    assertThat(new String(data), is("0312"));
   }
 
   @Test(expected = NullPointerException.class)
@@ -142,9 +153,40 @@ public class TestDateTypes {
     timeFormatter.format(FieldType.TIME, null, Dimension.parse("FIXED(6)"));
   }
 
-  @Test //(expected=IllegalArgumentException.class) - no longer fails as value constrained to dim specified
+  @Test(expected=IllegalArgumentException.class)
   public void testFormatBadTime() {
-    timeFormatter.format(FieldType.TIME, "12121212", Dimension.parse("FIXED(6)"));
+    timeFormatter.format(FieldType.TIME, "999999", Dimension.parse("FIXED(6)"));
+  }
+
+
+  @Test
+  public void nullIsNotValidDate() {
+    assertThat(dateFormatter.isValid(null, FieldType.DATE, Dimension.parse("FIXED(6)")), is(false));
+  }
+
+  @Test
+  public void stringTooShortInvalidDate() {
+    assertThat(dateFormatter.isValid("123",FieldType.DATE,Dimension.parse("FIXED(6)")), is(false));
+  }
+
+  @Test
+  public void invalidDateString() {
+    assertThat(dateFormatter.isValid("9999",FieldType.DATE,Dimension.parse("FIXED(6)")), is(false));
+  }
+
+  @Test
+  public void nullIsNotValidTime() {
+    assertThat(timeFormatter.isValid(null, FieldType.TIME, Dimension.parse("FIXED(6)")), is(false));
+  }
+
+  @Test
+  public void stringTooShortInvalidTime() {
+    assertThat(timeFormatter.isValid("123",FieldType.TIME,Dimension.parse("FIXED(6)")), is(false));
+  }
+
+  @Test
+  public void invalidTimeString() {
+    assertThat(timeFormatter.isValid("999999",FieldType.TIME,Dimension.parse("FIXED(6)")), is(false));
   }
 
 }

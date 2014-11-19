@@ -67,8 +67,11 @@ public class MessageParser {
     final MTI mti = reader.readMTI(input);
     final MessageTemplate template = validateMessageTemplate(mti);
 
-    return Message.create(template, header,
-      Maps.toMap(reader.readBitmap(bitmapType, input), parseMessage(input, reader, template)));
+    return Message.Builder()
+      .template(template)
+      .header(header)
+      .fields(Maps.toMap(reader.readBitmap(bitmapType, input), parseMessage(input, reader, template)))
+      .build();
   }
 
   /** @return a function that can parse a message into a map of field numbers to values */
@@ -79,7 +82,11 @@ public class MessageParser {
       public Object apply(final Integer fieldNum) {
         final FieldTemplate field = template.getFields().get(fieldNum);
         try {
-          return field.parse(reader.readField(field, input));
+          System.out.print("Read field ("+fieldNum+"): " + field);
+          final Object result = field.parse(reader.readField(field, input));
+          System.out.println("="+result);
+          return result;
+          //return field.parse(reader.readField(field, input));
         } catch ( Throwable t) {
           throw Throwables.propagate(t);
         }

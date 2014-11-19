@@ -9,7 +9,6 @@ import org.joda.time.format.DateTimeFormat;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nulleins.formats.iso8583.model.CardNumber;
-import org.nulleins.formats.iso8583.model.PaymentRequestBean;
 import org.nulleins.formats.iso8583.types.Bitmap;
 import org.nulleins.formats.iso8583.types.MTI;
 import org.springframework.test.context.ContextConfiguration;
@@ -93,7 +92,7 @@ public class TestXsd {
     final DateTime dateTime = DateTimeFormat.forPattern("MMddHHmmss").parseDateTime("1212121212");
     final DateTime date = DateTimeFormat.forPattern("MMdd").parseDateTime("1212");
     final LocalTime localTime = DateTimeFormat.forPattern("HHmmss").parseLocalTime("121212");
-    final Map<Integer, Object> results = Maps.transformValues(readback.getFields(), Functions.fromOptional());
+    final Map<Integer, Object> results = Maps.transformValues(readback.getFields(), MessageFactory.fromOptional());
     assertThat((String)results.get(2), is("5432*******92"));
     assertThat((BigInteger)results.get(3), is(BigInteger.valueOf(1010)));
     assertThat((BigInteger)results.get(4), is(BigInteger.valueOf(1200)));
@@ -256,7 +255,7 @@ public class TestXsd {
   public void testParseMessage()
       throws ParseException, IOException {
     final Map<Integer, Object> params = Maps.transformValues(
-        messages.parse(Payment_Request.getBytes()).getFields(), Functions.fromOptional());
+        messages.parse(Payment_Request.getBytes()).getFields(), MessageFactory.fromOptional());
 
     assertThat((String) params.get(2), is("5264**********02"));
     assertThat((BigInteger)params.get(3), is(BigInteger.valueOf(305700)));

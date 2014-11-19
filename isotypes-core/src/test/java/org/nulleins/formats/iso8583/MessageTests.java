@@ -16,6 +16,7 @@ import java.util.TreeSet;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.core.Is.is;
 
 public class MessageTests {
@@ -38,6 +39,7 @@ public class MessageTests {
 
     final MessageTemplate template400 = MessageTemplate.create("ISO015000077", MTI.create(0x0400), BitmapType.HEX);
     template400.addField(FieldTemplate.localBuilder(template400).get().f(2).type(FieldType.NUMERIC).dim("fixed(3)").name("TestField").build());
+    template400.addField(FieldTemplate.localBuilder(template400).get().f(3).type(FieldType.NUMERIC).dim("fixed(3)").name("TestField").build());
     final MessageTemplate template410 = MessageTemplate.create("ISO015000077", MTI.create(0x0410), BitmapType.HEX);
     template400.addField(FieldTemplate.localBuilder(template400).get().f(2).type(FieldType.NUMERIC).dim("fixed(3)").name("TestField").build());
     final MessageTemplate template200 = MessageTemplate.create("ISO015000077", MTI.create(0x0200), BitmapType.HEX);
@@ -113,6 +115,9 @@ public class MessageTests {
     final Map<Integer,Object> field2 = new HashMap<Integer,Object>() {{
       put(2,2);
     }};
+    final Map<Integer,Object> field3 = new HashMap<Integer,Object>() {{
+      put(3,1);
+    }};
     final Message first = Message.Builder()
         .header("ISO015000077")
         .template(factory.getTemplate(mti))
@@ -125,6 +130,25 @@ public class MessageTests {
         .build();
     assertThat(first, is(not(second)));
     assertThat(first.hashCode(), is(not(second.hashCode())));
+
+    assertThat(first, not(nullValue(Message.class)));
+    assertThat(first.equals("some string"), is(false));
+    field1.putAll(field3);
+    final Message third = Message.Builder()
+        .header("ISO015000077")
+        .template(factory.getTemplate(mti))
+        .fields(field1)
+        .build();
+    assertThat(first, is(not(third)));
+    assertThat(third.isFieldPresent(2), is(true));
+    assertThat(third.isFieldPresent(3), is(true));
+
+    final Message forth = Message.Builder()
+        .header("ISO015000077")
+        .template(factory.getTemplate(MTI.create(0x410)))
+        .fields(field1)
+        .build();
+    assertThat(first, is(not(forth)));
   }
 
   @Test

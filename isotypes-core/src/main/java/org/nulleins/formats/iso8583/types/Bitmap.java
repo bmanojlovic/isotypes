@@ -104,11 +104,11 @@ public class Bitmap implements Iterable<Integer> {
   private Id getBitmapIdForField(final int fieldNb) {
     if (fieldNb <= 64) {
       return Id.PRIMARY;
-    }
-    if (fieldNb > 64 && fieldNb <= 128) {
+    } else if (fieldNb > 64 && fieldNb <= 128) {
       return Id.SECONDARY;
+    } else {
+      return Id.TERTIARY;
     }
-    return Id.TERTIARY;
   }
 
   private int getFieldPosInBitmap(final int fieldNb, final Id bitmapId) {
@@ -124,6 +124,9 @@ public class Bitmap implements Iterable<Integer> {
   /** @param fieldNb
     * @return */
   public boolean isFieldPresent(final int fieldNb) {
+    if ( fieldNb == 1 || fieldNb == 65) {
+      return false;
+    }
     final Id bitmapId = getBitmapIdForField(fieldNb);
     final BitSet bitmap = bitmaps[bitmapId.index];
     final int pos = getFieldPosInBitmap(fieldNb, bitmapId);
@@ -167,7 +170,7 @@ public class Bitmap implements Iterable<Integer> {
   @Override
   public Iterator<Integer> iterator() {
     return new Iterator<Integer>() {
-      private final AtomicInteger nextFieldNum = new AtomicInteger(1);
+      private final AtomicInteger nextFieldNum = new AtomicInteger(0);
 
       @Override
       public boolean hasNext() {

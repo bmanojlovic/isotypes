@@ -222,7 +222,7 @@ public class TestBitmap {
   @Test
   public void testBitmapParseHex2() {
     final Bitmap target = Bitmap.parse(HEX1 + HEX2);
-    assertThat(target.isFieldPresent(1), is(true));
+    assertThat(target.isFieldPresent(1), is(false));
     assertThat(target.isFieldPresent(2), is(true));
     assertThat(target.isFieldPresent(3), is(true));
     assertThat(target.isFieldPresent(6), is(true));

@@ -58,7 +58,7 @@ public class TestStreamedMessage {
     final ByteArrayInputStream input = new ByteArrayInputStream(Payment_Request.getBytes());
 
     final Message response = factory.parse(input);
-    final Map<Integer, Object> results = Maps.transformValues(response.getFields(), Functions.fromOptional());
+    final Map<Integer, Object> results = Maps.transformValues(response.getFields(), MessageFactory.fromOptional());
     assertThat((BigInteger)results.get(2), is(BigInteger.valueOf(5264391220494002L)));
     assertThat((BigInteger)results.get(3), is(BigInteger.valueOf(305700)));
     assertThat((BigInteger)results.get(4), is(BigInteger.valueOf(32000)));
@@ -116,7 +116,7 @@ public class TestStreamedMessage {
     }};
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    factory.writeFromNumberMap(MTI.create("0200"), Maps.transformValues(params, Functions.toOptional()), baos);
+    factory.writeFromNumberMap(MTI.create("0200"), Maps.transformValues(params, Message.toOptional()), baos);
     assertThat(baos.toString(), is(Payment_Request));
   }
 

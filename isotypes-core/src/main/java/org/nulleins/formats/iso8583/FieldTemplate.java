@@ -162,7 +162,8 @@ public class FieldTemplate {
     try {
       return messageTemplate.getFormatter(type).parse(type, dimension, data.length, data);
     } catch (final ParseException e) {
-      throw new MessageException("Failed to parse field: " + this, e);
+      final String value = new String(data);
+      throw new MessageException("Failed to parse field: " + this + ", with value ["+value+"]", e);
     }
   }
 

@@ -38,6 +38,11 @@ public class TestStreamedMessage {
           + "121022021393716600021312111181800601368034522937166CIB08520263     CIB-57357"
           + "HOSPITAL     CAIRO          EG01120167124377818";
 
+  private static final String Tertiary_Request =
+      "ISO01500007702007238000108A18000165264391220494002305700000000032000"
+          + "121022021393716600021312111181800601368034522937166CIB08520263     CIB-57357"
+          + "HOSPITAL     CAIRO          EG01120167124377818";
+
   // MTI (0x0990) is valid but not defined:
   private static final String Unknown_Request =
       "ISO01500007709907238000108A18000165264391220494002305700000000032000"
@@ -50,7 +55,7 @@ public class TestStreamedMessage {
     final ByteArrayInputStream input = new ByteArrayInputStream(Payment_Request.getBytes());
     final Message response = factory.parse(input);
     System.out.println(response.describe());
-    final Map<Integer, Object> result = Maps.transformValues(response.getFields(), Functions.fromOptional());
+    final Map<Integer, Object> result = Maps.transformValues(response.getFields(), MessageFactory.fromOptional());
     assertThat((BigInteger)result.get(2), is(BigInteger.valueOf(5264391220494002L)));
     assertThat((BigInteger)result.get(3), is(BigInteger.valueOf(305700)));
     assertThat((BigInteger)result.get(4), is(BigInteger.valueOf(32000)));
@@ -108,7 +113,7 @@ public class TestStreamedMessage {
     }};
 
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    factory.writeFromNumberMap(MTI.create("0200"), Maps.transformValues(params, Functions.toOptional()), baos);
+    factory.writeFromNumberMap(MTI.create("0200"), Maps.transformValues(params, Message.toOptional()), baos);
     assertThat(baos.toString(), is(Payment_Request));
   }
 

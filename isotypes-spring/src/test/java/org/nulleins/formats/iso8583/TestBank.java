@@ -77,7 +77,7 @@ public class TestBank {
 
     // parse the message back as a map:
     Message readback = bankMessages.parse(messageText.getBytes());
-    Map<Integer, Object> outParams = new HashMap<>(Maps.transformValues(readback.getFields(), Functions.fromOptional()));
+    Map<Integer, Object> outParams = new HashMap<>(Maps.transformValues(readback.getFields(), MessageFactory.fromOptional()));
     assertThat(readback.validate(), empty());
 
     assertThat((BigInteger)outParams.get(2), is(BigInteger.valueOf(5061189187162513461L)));

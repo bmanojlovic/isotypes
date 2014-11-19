@@ -51,7 +51,7 @@ public class TestBinaryDecode {
 
     System.out.println(message.describe().toString());
 
-    final Map<Integer, Object> results = Maps.transformValues(message.getFields(), Functions.fromOptional());
+    final Map<Integer, Object> results = Maps.transformValues(message.getFields(), MessageFactory.fromOptional());
     assertThat((BigInteger)results.get(3), is(BigInteger.valueOf(4000)));
     assertThat((BigInteger)results.get(3), is(BigInteger.valueOf(4000)));
     assertThat((BigInteger)results.get(11), is(BigInteger.valueOf(1638)));

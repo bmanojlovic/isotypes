@@ -78,4 +78,7 @@ public class TypeFormatters {
     return "Registered formatters: " + formatters.keySet();
   }
 
+  public boolean hasFormatter(final String type) {
+    return formatters.containsKey(type);
+  }
 }

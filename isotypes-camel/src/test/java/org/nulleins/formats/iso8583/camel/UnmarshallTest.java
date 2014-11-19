@@ -63,7 +63,6 @@ public class UnmarshallTest {
       put(102, "91817233372");
     }};
     return Message.Builder()
-        .messageType(messageType)
         .header("ISO015000077")
         .template(factory.getTemplate(messageType))
         .fields(fields)

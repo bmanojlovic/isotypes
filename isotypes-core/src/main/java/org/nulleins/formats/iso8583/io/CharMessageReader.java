@@ -11,8 +11,7 @@ import java.io.IOException;
 
 /** MessageReader that reads numeric fields as text (in the defined Charset)
  * @author phillipsr */
-public class CharMessageReader
-    extends MessageReader {
+public class CharMessageReader extends MessageReader {
   /** Instantiate a character message reader
     * @param charset character set that character data is expected to be encoded with */
   public CharMessageReader(final CharEncoder charset) {
@@ -29,10 +28,12 @@ public class CharMessageReader
   /** {@inheritDoc} */
   @Override
   public byte[] readField(final FieldTemplate field, final DataInputStream input) throws IOException {
-    int length = field.getDimension().getLength();
+    final int length;
     if (field.getDimension().getType() == Dimension.Type.VARIABLE) {
       final byte[] data = readBytes(field.getDimension().getVSize(), input);
       length = Integer.parseInt(charCodec.getString(data));
+    } else {
+      length = field.getDimension().getLength();
     }
     return readBytes(length, input);
   }

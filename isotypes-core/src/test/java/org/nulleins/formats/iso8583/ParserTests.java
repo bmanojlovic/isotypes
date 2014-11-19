@@ -31,6 +31,18 @@ public class ParserTests {
           "420101012300000012313000010101010C00000010C00000001101827271711098"+
           "27277722717266621   2001919 978817112      1000";
 
+  private static final String SOLAB_REQUEST =
+      "ISO0150000500200B23A800128A18018000000001400000065000000000000205004281"+
+          "3271000057813271004280428042803456174591700012340000=000000230579A1"+
+          "B2C3D4E5 SOLABTEST TEST-3 DF MX010abcdefghij484012B456PRO1+000006 1234P0399904ABCD";
+
+  private static final String SOLAB_RESPONSE =
+      "ISO0150000550210B23A80012EA18018040000401400000465000000000000205004281"+
+          "3271000057813271004280428060403456174591700012340000=00000023057923"+
+          "104300A1B2C3D4E5 SOLABTEST TEST-3 DF MX010abcdefghij484012B456PRO1+000"+
+          "054Dynamic data generated at Mon Apr 28 13:27:11 CDT 2008ABCField of length 42 "+
+          "0399904ABCD031...and yet another fixed field.";
+
   @Test
   public void canParseMessageStream() throws IOException {
     final Message result = createTestParser().parse(new DataInputStream(new ByteArrayInputStream(GOOD_MESSAGE.getBytes())));
@@ -48,6 +60,29 @@ public class ParserTests {
       throw e.getCause();
     }
 
+  }
+
+  @Test
+  public void canParseSolabSamples() throws IOException {
+    final MTI requestType = MTI.create(0x0200);
+    final MTI responseType = MTI.create(0x0210);
+    final MessageFactory localFactory = BankMessageConfiguration.createSolabFactory();
+
+    final Map<MTI, MessageTemplate> messages = new HashMap<>(1);
+    messages.put(requestType,localFactory.getTemplate(requestType));
+    messages.put(responseType,localFactory.getTemplate(responseType));
+
+    final MessageParser parser1 = MessageParser.create(
+        "ISO015000050", messages, ContentType.TEXT, CharEncoder.ASCII, BitmapType.HEX);
+
+    final Message request = parser1.parse(new DataInputStream(new ByteArrayInputStream(SOLAB_REQUEST.getBytes())));
+    System.out.println(request.describe());
+
+    final MessageParser parser2 = MessageParser.create(
+        "ISO015000055", messages, ContentType.TEXT, CharEncoder.ASCII, BitmapType.HEX);
+
+    final Message response = parser2.parse(new DataInputStream(new ByteArrayInputStream(SOLAB_RESPONSE.getBytes())));
+    System.out.println(response.describe());
   }
 
   private static MessageParser createTestParser() {
