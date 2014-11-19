@@ -78,9 +78,11 @@ class Describer implements Iterable<String> {
         index.getAndIncrement();
         final FieldTemplate field = template.getFields().get(key);
         final Optional<Object> value = fields.containsKey(key) ? fields.get(key) : Optional.absent();
-        if ( field == null) {
-          return "Error: field #" + key + " missing from template, value: " + value.or("<absent>");
-        }
+        return formatField(key, field, value);
+      }
+
+      private String formatField(final int key, final FieldTemplate field, final Optional<Object> value) {
+        Preconditions.checkNotNull(field, "field #" + key + " missing from template, value: " + value.or("<absent>"));
         return String.format("%3d: %s:%-4s %-37s %-15s %s",
             key, field.getDimension(), field.getType(),
             "[" + value.or("<absent>") + "] ("

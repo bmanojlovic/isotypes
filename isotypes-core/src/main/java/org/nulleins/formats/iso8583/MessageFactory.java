@@ -253,6 +253,12 @@ public class MessageFactory {
     return ImmutableMap.copyOf(result);
   }
 
+  private Optional<Object> getAutoGenValue(final String autogen, final FieldTemplate field) {
+      Preconditions.checkArgument(autoGenerator.isPresent(),
+            "Message requires AutoGen field, but the (optional) AutoGenerator has not been set in the MessageFactory");
+      return autoGenerator.get().generate(autogen, field);
+  }
+
   private Optional<Object> writeField(final Optional<Object> param, final MessageWriter writer, final DataOutputStream dos, final FieldTemplate field)
       throws IOException {
     Optional<Object> data = param;
@@ -260,18 +266,12 @@ public class MessageFactory {
       // first, try to autogen, and then fall back to default (if any)
       final String autogen = field.getAutogen();
       if (autogen != null && !autogen.isEmpty()) {
-        if (!autoGenerator.isPresent()) {
-          throw new IllegalStateException(
-              "Message requires AutoGen field, but the (optional) AutoGenerator has not been set in the MessageFactory");
-        }
-        data = autoGenerator.get().generate(autogen, field);
+        data = getAutoGenValue(autogen, field);
       }
       if (!data.isPresent()) {
         data = Optional.<Object>fromNullable(field.getDefaultValue());
       }
-      if (!data.isPresent()) {
-        throw new MessageException("No value for field: " + field);
-      }
+      Preconditions.checkState(data.isPresent(),"No value for field: " + field);
     }
     if (data.isPresent()) {
       writer.appendField(field, data.get(), dos);
@@ -331,12 +331,7 @@ public class MessageFactory {
   TypeFormatter<?> getFormatter(final String type) {
     Preconditions.checkArgument(formatters.hasFormatter(type),
         "No formatter registered for field type=[" + type + "] in " + formatters);
-    try {
-      return formatters.getFormatter(type);
-    } catch (final Exception e) {
-      throw new MessageException(
-          "No formatter registered for field type=[" + type + "] in " + formatters, e);
-    }
+    return formatters.getFormatter(type);
   }
 
   /** @return a message parsed from the supplied <code>bytes</code> array (message data)

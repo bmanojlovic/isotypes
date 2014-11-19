@@ -123,6 +123,100 @@ public class TestMessageTemplate {
     System.out.println(result.describe());
   }
 
+  @Test
+  public void testCreateBinaryMessageTemplate() throws IOException {
+    final MessageTemplate template = MessageTemplate.create("ISO015000077", PaymentRequest, BitmapType.BINARY);
+    assertThat(template.getMessageType(), is(PaymentRequest));
+    assertThat(template.getHeader(), is("ISO015000077"));
+    final FieldTemplate.Builder builder = FieldTemplate.localBuilder(template).get();
+    final Map<Integer, FieldTemplate> fields = new HashMap<Integer, FieldTemplate>() {{
+      put( 2, builder.f(2).type(FieldType.ALPHANUMSYMBOL).dim("llvar(10)").name("TestField2").desc("Just a Test").build());
+      put( 3, builder.f(3).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField3").desc("Processing Code").build());
+      put( 4, builder.f(4).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField4").desc("Amount, transaction (PT - cents)").build());
+      put( 7, builder.f(7).type(FieldType.DATE).dimension(FIXED10).name("TestField5").desc("Transmission Date and Time").build());
+      put(11, builder.f(11).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField6").desc("System Trace Audit Number").build());
+    }};
+    template.setFields(fields);
+
+    template.addField(builder.f(64).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField64").desc("System Trace Audit Number").build());
+    template.addField(builder.f(66).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField66").desc("System Trace Audit Number").build());
+    template.addField(builder.f(128).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField128").desc("System Trace Audit Number").build());
+    template.addField(builder.f(130).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField130").desc("System Trace Audit Number").build());
+    template.addField(builder.f(192).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField192").desc("System Trace Audit Number").build());
+
+    // E220000000000001 becomes F220000000000001 as secondary bitmap now set
+    assertThat(template.getBitmap().asHex(Bitmap.Id.PRIMARY), is("F220000000000001"));
+    assertThat(template.getBitmap().asHex(Bitmap.Id.SECONDARY), is("C000000000000001"));
+    assertThat(template.getBitmap().asHex(Bitmap.Id.TERTIARY), is("4000000000000001"));
+
+    System.out.println(Joiner.on(',').join(template.getBitmap()));
+    assertThat(template.getBitmap().isFieldPresent(2), is(true));
+    assertThat(template.getBitmap().isFieldPresent(3), is(true));
+    assertThat(template.getBitmap().isFieldPresent(4), is(true));
+    assertThat(template.getBitmap().isFieldPresent(7), is(true));
+    assertThat(template.getBitmap().isFieldPresent(11), is(true));
+    assertThat(template.getBitmap().isFieldPresent(64), is(true));
+    assertThat(template.getBitmap().isFieldPresent(65), is(false));
+    assertThat(template.getBitmap().isFieldPresent(66), is(true));
+    assertThat(template.getBitmap().isFieldPresent(128), is(true));
+    assertThat(template.getBitmap().isFieldPresent(130), is(true));
+    assertThat(template.getBitmap().isFieldPresent(192), is(true));
+
+    Set<Integer> fieldNumbers = Sets.newHashSet(template.getBitmap());
+
+    assertThat(fieldNumbers, containsInAnyOrder(2, 3, 4, 7, 11, 64, 66, 128, 130, 192));
+
+    assertThat(Arrays.equals(BINARY_BITMAP1, template.getBitmap().asBinary(Bitmap.Id.PRIMARY)), is(true));
+    assertThat(Arrays.equals(BINARY_BITMAP2, template.getBitmap().asBinary(Bitmap.Id.SECONDARY)), is(true));
+    assertThat(Arrays.equals(BINARY_BITMAP3, template.getBitmap().asBinary(Bitmap.Id.TERTIARY)), is(true));
+
+    final MessageFactory testFactory = MessageFactory.Builder()
+        .id("tertiaryTests")
+        .contentType(ContentType.TEXT)
+        .bitmapType(BitmapType.BINARY)
+        .templates(asList(template))
+        .build();
+
+    final Map<Integer, Object> testFields = new HashMap<Integer,Object>() {{
+      put(2,"Field 2");
+      put(3,123456);
+      put(4,789101);
+      put(7, DateTime.parse("2014-11-20T12:30:00"));
+      put(11,"100001");
+      put(64,"200001");
+      put(66,"300001");
+      put(128,"400001");
+      put(130,"500001");
+      put(192,"600001");
+    }};
+    final Message message = testFactory.create(PaymentRequest, testFields);
+    System.out.println(message.describe());
+    final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    testFactory.writeToStream(message, baos);
+    final byte[] expectedBinaryMessage = new byte[] {
+        0x30, 0x32, 0x30, 0x30, // 0200
+ (byte) 0xf2, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, // F220000000000001
+ (byte) 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, // C000000000000001
+        0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, // 4000000000000001
+        0x30, 0x37, 0x46, 0x69, 0x65, 0x6c, 0x64, 0x20, 0x32,  // 07Field 2
+        0x31, 0x32, 0x33, 0x34, 0x35, 0x36, // 123456
+        0x37, 0x38, 0x39, 0x31, 0x30, 0x31, // 789101
+        0x31, 0x31, 0x32, 0x30, 0x31, 0x32, 0x33, 0x30, 0x30, 0x30, 0x31,
+        0x30, 0x30, 0x30, 0x30, 0x31, 0x32, 0x30, 0x30, 0x30, 0x30, 0x31, 0x33, 0x30, 0x30, 0x30, 0x30,
+        0x31, 0x34, 0x30, 0x30, 0x30, 0x30, 0x31, 0x35, 0x30, 0x30, 0x30, 0x30, 0x31, 0x36, 0x30, 0x30,
+        0x30, 0x30, 0x31
+    };
+    assertThat(baos.toByteArray(), is(expectedBinaryMessage));
+
+    final Map<MTI, MessageTemplate> templateMap = new HashMap<MTI,MessageTemplate>() {{
+      put(PaymentRequest,template);
+    }};
+    final MessageParser parser = MessageParser.create(
+        "", templateMap, ContentType.TEXT, CharEncoder.ASCII, BitmapType.BINARY);
+    final Message result = parser.parse(new DataInputStream(new ByteArrayInputStream(baos.toByteArray())));
+    System.out.println(result.describe());
+  }
+
   @Before
   public void createFactory() {
     this.factory = new MessageFactory();

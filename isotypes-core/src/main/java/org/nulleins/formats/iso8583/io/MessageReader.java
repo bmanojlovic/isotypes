@@ -37,8 +37,9 @@ public abstract class MessageReader {
       throws IOException {
     if (bitmapType == BitmapType.BINARY) {
       return readBinaryBitmap(input);
+    } else {
+      return readHexBitmap(input);
     }
-    return readHexBitmap(input);
   }
 
   /** Read a binary bitmap from the input stream
@@ -52,7 +53,7 @@ public abstract class MessageReader {
       final byte[] bitmap2 = readBytes(8, input);
       bitmap1 = ArrayUtils.addAll(bitmap1, bitmap2);
       // read tertiary bitmap (if present):
-      if ((bitmap2[0] & (byte) 0x80) == 0x80) {
+      if ((bitmap2[0] & (byte) 0x80) != 0) {
         final byte[] bitmap3 = readBytes(8, input);
         bitmap1 = ArrayUtils.addAll(bitmap1, bitmap3);
       }

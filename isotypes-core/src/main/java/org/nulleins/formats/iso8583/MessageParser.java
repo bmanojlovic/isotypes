@@ -82,11 +82,7 @@ public class MessageParser {
       public Object apply(final Integer fieldNum) {
         final FieldTemplate field = template.getFields().get(fieldNum);
         try {
-          System.out.print("Read field ("+fieldNum+"): " + field);
-          final Object result = field.parse(reader.readField(field, input));
-          System.out.println("="+result);
-          return result;
-          //return field.parse(reader.readField(field, input));
+          return field.parse(reader.readField(field, input));
         } catch ( Throwable t) {
           throw Throwables.propagate(t);
         }
