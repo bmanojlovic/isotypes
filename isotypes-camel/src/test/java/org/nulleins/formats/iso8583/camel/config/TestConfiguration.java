@@ -7,10 +7,13 @@ import org.nulleins.formats.iso8583.MessageFactory;
 import org.nulleins.formats.iso8583.MessageTemplate;
 import org.nulleins.formats.iso8583.camel.ISO8583Format;
 import org.nulleins.formats.iso8583.types.BitmapType;
+import org.nulleins.formats.iso8583.types.CharEncoder;
 import org.nulleins.formats.iso8583.types.ContentType;
 import org.nulleins.formats.iso8583.types.MTI;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 import static java.util.Arrays.asList;
 
@@ -31,9 +34,8 @@ public class TestConfiguration extends SingleRouteCamelConfiguration {
 
   @Bean
   public MessageFactory factory() {
-    final MessageTemplate template = MessageTemplate.create("ISO015000077", MTI.create(0x0210), BitmapType.HEX);
-    final FieldTemplate.Builder builder = FieldTemplate.localBuilder(template).get();
-    template.setFields(asList(
+    final FieldTemplate.Builder builder = FieldTemplate.localBuilder().get();
+    final List<FieldTemplate> fields = asList(
         builder.f(2).name("accountNumber").desc("Primary Account Number").dim("llvar(19)").type("n").build(),
         builder.f(3).name("processingCode").desc("Processing Code").dim("fixed(6)").type("n").build(),
         builder.f(4).name("amount").desc("Amount, transaction (cents)").dim("fixed(12)").type("n").build(),
@@ -53,13 +55,15 @@ public class TestConfiguration extends SingleRouteCamelConfiguration {
         builder.f(49).name("currencyCode").desc("Currency Code, Transaction").dim("fixed(3)").type("n").build(),
         builder.f(54).name("addAmounts").desc("Additional Amounts").dim("lllvar(120)").type("ans").build(),
         builder.f(60).name("adviceCode").desc("Advice/reason code").dim("lllvar(120)").type("an").build(),
-        builder.f(102).name("accountId1").desc("Account Identification 1").dim("llvar(28)").type("ans").build()));
+        builder.f(102).name("accountId1").desc("Account Identification 1").dim("llvar(28)").type("ans").build());
+    final MessageTemplate template = MessageTemplate.Builder().header("ISO015000077").type(MTI.create(0x0210)).fieldlist(fields).build();
     return MessageFactory.Builder()
         .id("testMessages")
         .header("ISO015000077")
         .contentType(ContentType.TEXT)
         .templates(asList(template))
-        .bitmapType(BitmapType.HEX).build();
+        .charset (CharEncoder.ASCII)
+        .bitmapType (BitmapType.HEX).build();
   }
 
   @Bean

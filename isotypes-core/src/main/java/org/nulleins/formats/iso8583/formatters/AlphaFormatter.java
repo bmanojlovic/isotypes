@@ -36,10 +36,8 @@ public class AlphaFormatter extends TypeFormatter<String> {
     try {
       result = decode(data).trim();
     } catch (final Exception e) {
-      final ParseException rethrow = new ParseException(
-          "Decoding error for " + type + " field: " + Arrays.toString(data), position);
-      rethrow.initCause(e);
-      throw rethrow;
+      throw new ParseException(
+          "Decoding error " + e.getMessage() + " for " + type + " field: " + Arrays.toString(data), position);
     }
 
     if (!isValid(result, type, dimension)) {
@@ -67,7 +65,7 @@ public class AlphaFormatter extends TypeFormatter<String> {
         throw new MessageException("Fixed field data length ("
             + value.length() + ") exceeds field maximum (" + dimension.getLength() + "): data=[" + value + "]");
       }
-      // for fixed width fields, pad right with spaces
+      // for fixed width fieldlist, pad right with spaces
       return String.format("%-" + length + "." + length + "s", value).getBytes();
     }
     // Variable field: dim length is the maximum length:
@@ -78,7 +76,7 @@ public class AlphaFormatter extends TypeFormatter<String> {
     return value.getBytes();
   }
 
-  /* set of pattern matchers for the various alpha-based type fields */
+  /* set of pattern matchers for the various alpha-based type fieldlist */
   private static final Map<String, Pattern> Validators = new HashMap<String, Pattern>(3) {{
     put(FieldType.ALPHA, Pattern.compile("[a-zA-Z]*"));      // zero or more alphabetic
     put(FieldType.ALPHANUM, Pattern.compile("[a-zA-Z0-9]*"));   // zero or more alphabetic or digit

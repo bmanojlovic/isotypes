@@ -1,10 +1,11 @@
 package org.nulleins.formats.iso8583.spring;
 
-import org.nulleins.formats.iso8583.AutoGenerator;
-import org.nulleins.formats.iso8583.AutoGeneratorFactory;
-import org.nulleins.formats.iso8583.FieldTemplate;
-import org.nulleins.formats.iso8583.MessageFactory;
-import org.nulleins.formats.iso8583.MessageTemplate;
+import com.google.common.base.Function;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.Iterables;
+import org.nulleins.formats.iso8583.*;
+import org.nulleins.formats.iso8583.types.CharEncoder;
+import org.nulleins.formats.iso8583.types.MTI;
 import org.springframework.beans.factory.FactoryBean;
 
 import java.util.ArrayList;
@@ -15,23 +16,23 @@ import java.util.Map;
 /** Bean factory to create a MessageFactory instance from the parsed XML definition
   * @author phillipsr */
 public class SchemaFactoryBean implements FactoryBean<MessageFactory> {
-  private String id;
-  private final Map<String, MessageTemplate> messages = new HashMap<>();
+
+  private final Map<String, SpringMessageTemplate> messages = new HashMap<>();
   /* map of field lists by message MTI */
-  private final Map<String, List<FieldTemplate>> fields = new HashMap<>();
+  private final Map<String, List<SpringFieldTemplate>> fields = new HashMap<>();
   private String description;
   private AutoGenerator autogen;
   private final List<FormatterSpec> formatters = new ArrayList<>();
-  private MessageFactory schema;
+  private SpringMessageSchema schema;
 
   /** Set the message object that will be decorated and returned by this bean factory
     * @param schema the top-level process object defined */
-  public void setSchema(final MessageFactory schema) {
+  public void setSchema(final SpringMessageSchema schema) {
     this.schema = schema;
   }
 
-  public void setMessages(final List<MessageTemplate> messageList) {
-    for (final MessageTemplate message : messageList) {
+  public void setMessages(final List<SpringMessageTemplate> messageList) {
+    for (final SpringMessageTemplate message : messageList) {
       messages.put(message.getType(), message);
     }
   }
@@ -42,9 +43,9 @@ public class SchemaFactoryBean implements FactoryBean<MessageFactory> {
     }
   }
 
-  public void setFields(final List<FieldTemplate> fieldList) {
-    for (final FieldTemplate field : fieldList) {
-      List<FieldTemplate> messageFields = fields.get(field.getMessageType());
+  public void setFields(final List<SpringFieldTemplate> fieldList) {
+    for (final SpringFieldTemplate field : fieldList) {
+      List<SpringFieldTemplate> messageFields = fields.get(field.getMessageType());
       if (messageFields == null) {
         messageFields = new ArrayList<>();
         fields.put(field.getMessageType(), messageFields);
@@ -67,36 +68,50 @@ public class SchemaFactoryBean implements FactoryBean<MessageFactory> {
     MessageFactory.Builder builder = MessageFactory.Builder()
         .id(schema.getId())
         .bitmapType(schema.getBitmapType())
-        .charset(schema.getCharset())
-        .contentType(schema.getContentType())
-        .header(schema.getHeader())
-        .description(description)
-        .autogen(new AutoGeneratorFactory(autogen));
+        .charset(new CharEncoder (schema.getCharset()))
+        .contentType (schema.getContentType ())
+        .header (schema.getHeader ())
+        .description (description)
+        .autogen (new AutoGeneratorFactory (autogen));
 
     for (final FormatterSpec item : formatters) {
       builder = builder.addFormatter(item.getType(), item.getFormatter());
     }
-    for (final Map.Entry<String, MessageTemplate> item : messages.entrySet()) {
-      final MessageTemplate message = item.getValue();
-      setMessageFields(item.getKey(), message);
+    for (final Map.Entry<String, SpringMessageTemplate> item : messages.entrySet()) {
+      final SpringMessageTemplate messageTemplate = item.getValue();
+      setMessageFields(item.getKey(), messageTemplate);
+      final List<FieldTemplate> fieldList = FluentIterable.from (messageTemplate.getFields ())
+              .transform (fieldTemplateTransformer).toList ();
+      final MessageTemplate message = MessageTemplate.Builder ()
+          .type (MTI.create (messageTemplate.getType ()))
+          .name (messageTemplate.getName ())
+          .fieldlist (fieldList)
+          .header (schema.getHeader ())
+          .build ();
       builder = builder.addTemplate(message);
     }
-    final MessageFactory schema = builder.build();
-    schema.initialize();
-    return schema;
+    return  builder.build();
   }
 
-  private void setMessageFields(final String type, final MessageTemplate message) {
-    final List<FieldTemplate> fields = this.fields.get(type);
-    for (final FieldTemplate field : fields) {
-      if (message.getFields().containsKey(field.getNumber())) {
-        throw new IllegalStateException("duplicate field f: "
-            + field.getNumber() + " defined for Message type "
-            + message.getMessageType());
+  /** function to transform SpringFieldTemplates to FieldTemplates */
+  private static final Function<SpringFieldTemplate, FieldTemplate> fieldTemplateTransformer =
+     new Function<SpringFieldTemplate, FieldTemplate> () {
+      @Override
+      public FieldTemplate apply (final SpringFieldTemplate input) {
+        return FieldTemplate.localBuilder ().get ()
+            .f (Integer.valueOf (input.getNumber ()))
+            .type (input.getType ())
+            .name (input.getName ())
+            .dimension (input.getDimension ())
+            .desc (input.getDescription ())
+            .autogenSpec (input.getAutogen ())
+            .defaultValue (input.getDefaultValue ())
+            .build ();
       }
-      field.setMessageTemplate(message);
-      message.addField(field);
-    }
+    };
+
+  private void setMessageFields(final String type, final SpringMessageTemplate message) {
+    message.setFields (this.fields.get(type));
   }
 
   /** @return the target object type that this factory will create */

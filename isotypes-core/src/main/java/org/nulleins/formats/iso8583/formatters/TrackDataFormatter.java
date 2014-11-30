@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
  * magnetic strips (ISO/IEC 7813)
  * <p/>
  * Note, this data hs already been read and parsed by the card reader hardware before being submitted via
- * ISO8583, so usually, the start- and end-sentinels and LRC fields are not present in an ISO8583 field<p/>
+ * ISO8583, so usually, the start- and end-sentinels and LRC fieldlist are not present in an ISO8583 field<p/>
  * <b>Track 1:</b>
  * <pre>
  * %B1234567890123445^EARIBUG/H.                ^99011200000000000000**XXX******?*
@@ -142,7 +142,7 @@ public class TrackDataFormatter extends TypeFormatter<TrackData> {
   /**
    * {@inheritDoc}
    * <p/>Check that the supplied value is-a <code>TrackData</code> object, of type Track1 or Track2,
-   * and that the mandatory fields are set
+   * and that the mandatory fieldlist are set
    */
   @Override
   public boolean isValid(final Object value, final String type, final Dimension dimension) {
@@ -150,34 +150,28 @@ public class TrackDataFormatter extends TypeFormatter<TrackData> {
       return false;
     }
     final TrackData trackData = (TrackData) value;
-    if (trackData.getType() != TrackData.Track.TRACK1 && trackData.getType() != TrackData.Track.TRACK2) {
-      return false;
-    } else if (trackData.getExpirationDate() == 0) {
-      return false;
-    } else if (trackData.getServiceCode() == 0) {
-      return false;
-    }
-    return trackData.getType() == TrackData.Track.TRACK2 || trackData.getPrimaryAccountNumber() != 0;
+    return !((trackData.getType() != TrackData.Track.TRACK1 && trackData.getType() != TrackData.Track.TRACK2)
+              || trackData.getExpirationDate() == 0 || trackData.getServiceCode() == 0)
+        && (trackData.getType() == TrackData.Track.TRACK2 || trackData.getPrimaryAccountNumber() != 0);
   }
 
   /**
    * Interpret the supplied field value as Track 1 data
    * @param matcher that has matcher the Track1 pattern
-   * @return TrackData object initialized from the sub-fields of <code>value/code>,
+   * @return TrackData object initialized from the sub-fieldlist of <code>value/code>,
    * with the <code>name</code> property set
    * @throws AssertionError if the matcher has not matched the 5 groups in the Track1 pattern
    */
   private TrackData parseTrack1(final Matcher matcher) {
-    final TrackData result = new TrackData(TrackData.Track.TRACK1);
-    assert matcher.groupCount() == 6 : "Track1 Data has 6 fields (" + matcher.groupCount() + ")";
-    assert matcher.group(1).charAt(0) == 'B' : "Only Track1 type 'B' format supported";
-    result.setPrimaryAccountNumber(Long.parseLong(matcher.group(2).trim()));
-    result.setName(getNameFields(matcher.group(3).trim()));
-    result.setExpirationDate(Integer.parseInt(matcher.group(4).trim()));
-    result.setServiceCode(Integer.parseInt(matcher.group(5).trim()));
-    result.setDiscretionaryData(matcher.group(6).trim());
-
-    return result;
+    Preconditions.checkArgument(matcher.groupCount() == 6, "Track1 Data requires 6 fieldlist (" + matcher.groupCount() + ")");
+    Preconditions.checkArgument(matcher.group(1).charAt(0) == 'B', "Only Track1 type 'B' format supported");
+    return TrackData.Builder()
+      .type(TrackData.Track.TRACK1)
+      .primaryAccountNumber(Long.parseLong(matcher.group(2).trim()))
+      .name(getNameFields(matcher.group(3).trim()))
+      .expirationDate(Integer.parseInt(matcher.group(4).trim()))
+      .serviceCode(Integer.parseInt(matcher.group(5).trim()))
+      .discretionaryData(matcher.group(6).trim()).build ();
   }
 
   /**
@@ -188,30 +182,31 @@ public class TrackDataFormatter extends TypeFormatter<TrackData> {
    * @throws AssertionError if the matcher has not matched the 4 groups in the Track2 pattern
    */
   private TrackData parseTrack2(final Matcher matcher) {
-    final TrackData result = new TrackData(TrackData.Track.TRACK2);
-    assert matcher.groupCount() == 4 : "Track2 Data has 4 fields (" + matcher.groupCount() + ")";
+    Preconditions.checkArgument(matcher.groupCount() == 4,
+        "Track2 Data requires 4 fieldlist (" + matcher.groupCount() + ")");
 
-    result.setPrimaryAccountNumber(Long.parseLong(matcher.group(1)));
-    result.setExpirationDate(Integer.parseInt(matcher.group(2)));
-    result.setServiceCode(Integer.parseInt(matcher.group(3)));
-    result.setDiscretionaryData(matcher.group(4));
-
-    return result;
+    return TrackData.Builder()
+        .type(TrackData.Track.TRACK2)
+    .primaryAccountNumber(Long.parseLong(matcher.group(1)))
+    .expirationDate(Integer.parseInt(matcher.group(2)))
+    .serviceCode(Integer.parseInt(matcher.group(3)))
+    .discretionaryData(matcher.group(4)).build ();
   }
 
   /**
    * Parse an encoded Track2 name field into its four elements
    * @param nameField formatted according to ISO8583 Track2 Data Name format
-   * @return array of {Surname, First Name or Initial, Middle Name or Initia, Title}
+   * @return array of {Surname, First Name or Initial, Middle Name or Initial, Title}
    */
   private String[] getNameFields(final String nameField) {
     final Matcher matcher = NameFieldMatcher.matcher(nameField);
     if (!matcher.matches()) {
       return new String[]{nameField, "", "", ""};
+    } else {
+      return new String[]{
+          matcher.group(1), matcher.group(2),
+          matcher.group(3), matcher.group(4)};
     }
-    return new String[]{
-        matcher.group(1), matcher.group(2),
-        matcher.group(3), matcher.group(4)};
   }
 
 }

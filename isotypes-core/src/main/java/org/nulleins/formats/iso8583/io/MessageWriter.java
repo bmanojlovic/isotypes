@@ -1,6 +1,7 @@
 package org.nulleins.formats.iso8583.io;
 
 import org.nulleins.formats.iso8583.FieldTemplate;
+import org.nulleins.formats.iso8583.formatters.TypeFormatter;
 import org.nulleins.formats.iso8583.types.Bitmap;
 import org.nulleins.formats.iso8583.types.BitmapType;
 import org.nulleins.formats.iso8583.types.CharEncoder;
@@ -52,12 +53,14 @@ public abstract class MessageWriter {
 
   /**
    * Write the supplied field to the output stream
-   * @param field  template describing field to be written
-   * @param data   value of the field to output
-   * @param output stream to append data to
+   *
+   * @param formatter to render field in output stream
+   * @param field     template describing field to be written
+   * @param data      value of the field to output
+   * @param output    stream to append data to
    * @throws IOException if the data could not be written tot he output stream
    */
-  public abstract void appendField(FieldTemplate field, Object data, DataOutputStream output) throws IOException;
+  public abstract void appendField(final TypeFormatter<?> formatter, FieldTemplate field, Object data, DataOutputStream output) throws IOException;
 
   /**
    * Write the supplied bitmap to the output stream

@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
+import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 
@@ -49,8 +50,8 @@ public class TestMessageFactory {
 
   @Test(expected = IllegalArgumentException.class)
   public void testBadCharset() {
-    this.factory = new MessageFactory();
-    factory.setCharset(new CharEncoder("tlhIngan-pIqaD")); // try to set Klingon charset
+    MessageFactory.Builder()
+        .charset(new CharEncoder("tlhIngan-pIqaD")); // try to set Klingon charset
   }
 
   @Test(expected = NoSuchFieldError.class)
@@ -65,15 +66,19 @@ public class TestMessageFactory {
     message.getFieldValue("Frogmella");
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test(expected = IllegalArgumentException.class)
   public void createFactoryFails() {
-    final MessageFactory subject = new MessageFactory();
-    subject.setId("testFactory");
-    subject.setDescription("Test Message Schema");
-    subject.setBitmapType(BitmapType.HEX);
-    subject.setContentType(ContentType.TEXT);
-    subject.setHeader("ISO015000077");
-    subject.initialize();
+    try {
+      final MessageFactory subject = MessageFactory.Builder ()
+          .id ("testFactory")
+          .description ("Test Message Schema")
+          .bitmapType (BitmapType.HEX)
+          .contentType (ContentType.TEXT)
+          .header ("ISO015000077").build ();
+    } catch ( IllegalArgumentException e) {
+      assertThat(e.getMessage (), is("Factory must have message template definitions"));
+      throw e;
+    }
   }
 
   private static final String MESSAGE_FACTORY_DESCRIPTION =
@@ -82,16 +87,20 @@ public class TestMessageFactory {
 
   @Before
   public void createFactory() {
-    this.factory = new MessageFactory();
-    factory.setId("testFactory");
-    factory.setDescription("Test Message Schema");
-    factory.setBitmapType(BitmapType.HEX);
-    factory.setContentType(ContentType.TEXT);
-    factory.setHeader("ISO015000077");
-    final MessageTemplate template = MessageTemplate.create("ISO015000077", RequestMessage, BitmapType.HEX);
-    template.addField(FieldTemplate.localBuilder(template).get().f(2).type(FieldType.NUMERIC).dim("fixed(6)").name("TestField").build());
-    factory.addTemplate(template);
-    factory.initialize();
+    final FieldTemplate field = FieldTemplate.localBuilder().get().f(2).type(FieldType.NUMERIC).dim("fixed(6)").name("TestField").build();
+    final MessageTemplate template = MessageTemplate.Builder()
+        .header("ISO015000077")
+        .type(RequestMessage)
+        .fieldlist(asList(field))
+        .build();
+    this.factory = MessageFactory.Builder()
+        .id("testFactory")
+        .description("Test Message Schema")
+        .bitmapType(BitmapType.HEX)
+        .contentType(ContentType.TEXT)
+        .charset(CharEncoder.ASCII)
+        .addTemplate(template)
+        .header("ISO015000077").build();
   }
 
 }

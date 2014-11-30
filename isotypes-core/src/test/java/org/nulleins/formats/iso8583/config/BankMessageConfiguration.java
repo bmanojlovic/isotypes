@@ -7,10 +7,9 @@ import org.nulleins.formats.iso8583.MessageTemplate;
 import org.nulleins.formats.iso8583.StanGenerator;
 import org.nulleins.formats.iso8583.formatters.AddAmountsFormatter;
 import org.nulleins.formats.iso8583.formatters.CardAcceptorLocationFormatter;
-import org.nulleins.formats.iso8583.types.BitmapType;
-import org.nulleins.formats.iso8583.types.ContentType;
-import org.nulleins.formats.iso8583.types.FieldType;
-import org.nulleins.formats.iso8583.types.MTI;
+import org.nulleins.formats.iso8583.types.*;
+
+import java.util.List;
 
 import static java.util.Arrays.asList;
 
@@ -21,10 +20,8 @@ public class BankMessageConfiguration {
     final FieldType AAfType = new FieldType("AAf");
     final FieldType CALfType = new FieldType("CALf");
 
-    final MessageTemplate requestMessageTemplate = MessageTemplate.create("ISO015000077", MTI.create(0x0200), BitmapType.HEX);
-    requestMessageTemplate.setName("Transaction Request");
-    final FieldTemplate.Builder requestBuilder = FieldTemplate.localBuilder(requestMessageTemplate).get();
-    requestMessageTemplate.setFields(asList(
+    final FieldTemplate.Builder requestBuilder = FieldTemplate.localBuilder().get();
+    final List<FieldTemplate> requestFields = asList(
         requestBuilder.f(2).name("accountNumber").desc("Primary Account Number").dim("llvar(19)").type("n").build(),
         requestBuilder.f(3).name("processingCode").desc("Processing Code").dim("fixed(6)").type("n").build(),
         requestBuilder.f(4).name("amount").desc("Amount, transaction (cents)").dim("fixed(12)").type("n").build(),
@@ -42,11 +39,17 @@ public class BankMessageConfiguration {
         requestBuilder.f(42).name("cardAcceptorId").desc("Card Acceptor ID Code").dim("fixed(15)").type("ans").build(),
         requestBuilder.f(43).name("cardAcceptorLoc").desc("Card Acceptor Location Name").dim("fixed(40)").type("ans").build(),
         requestBuilder.f(49).name("currencyCode").desc("Currency Code, Transaction").dim("fixed(3)").type("n").build(),
-        requestBuilder.f(60).name("adviceCode").desc("Advice/reason code").dim("lllvar(999)").type("an").build()));
+        requestBuilder.f(60).name("adviceCode").desc("Advice/reason code").dim("lllvar(999)").type("an").build());
 
-    final MessageTemplate responseMessageTemplate = MessageTemplate.create("ISO015000077", MTI.create(0x0210), BitmapType.HEX);
-    final FieldTemplate.Builder responseBuilder = FieldTemplate.localBuilder(responseMessageTemplate).get();
-    responseMessageTemplate.setFields(asList(
+    final MessageTemplate requestMessageTemplate = MessageTemplate.Builder()
+        .name("Transaction Request")
+        .header("ISO015000077")
+        .type(MTI.create(0x0200))
+        .fieldlist(requestFields)
+        .build();
+
+    final FieldTemplate.Builder responseBuilder = FieldTemplate.localBuilder().get();
+    final List<FieldTemplate> responseFields = asList(
         responseBuilder.f(2).name("accountNumber").desc("Primary Account Number").dim("llvar(19)").type("n").build(),
         responseBuilder.f(3).name("processingCode").desc("Processing Code").dim("fixed(6)").type("n").build(),
         responseBuilder.f(4).name("amount").desc("Amount, transaction (cents)").dim("fixed(12)").type("n").build(),
@@ -66,13 +69,21 @@ public class BankMessageConfiguration {
         responseBuilder.f(49).name("currencyCode").desc("Currency Code, Transaction").dim("fixed(3)").type("n").build(),
         responseBuilder.f(54).name("addAmounts").desc("Additional Amounts").dim("lllvar(120)").type("ans").build(),
         responseBuilder.f(60).name("adviceCode").desc("Advice/reason code").dim("lllvar(120)").type("an").build(),
-        responseBuilder.f(102).name("accountId1").desc("Account Identification 1").dim("llvar(28)").type("ans").build()));
+        responseBuilder.f(102).name("accountId1").desc("Account Identification 1").dim("llvar(28)").type("ans").build());
+
+    final MessageTemplate responseMessageTemplate = MessageTemplate.Builder()
+        .name("Transaction Response")
+        .header("ISO015000077")
+        .type(MTI.create(0x0210))
+        .fieldlist(responseFields)
+        .build();
 
     return MessageFactory.Builder()
         .id("messageSet")
         .header("ISO015000077")
         .contentType(ContentType.TEXT)
         .bitmapType(BitmapType.HEX)
+        .charset(CharEncoder.ASCII)
         .autogen(new AutoGeneratorFactory(new StanGenerator(1, 999)))
         .templates(asList(requestMessageTemplate, responseMessageTemplate))
         .addFormatter(AAfType.getCode(), new AddAmountsFormatter())
@@ -83,10 +94,8 @@ public class BankMessageConfiguration {
 
   public static MessageFactory createSolabFactory() {
 
-    final MessageTemplate requestMessageTemplate = MessageTemplate.create("ISO015000050", MTI.create(0x0200), BitmapType.HEX);
-    requestMessageTemplate.setName("Transaction Request");
-    final FieldTemplate.Builder requestBuilder = FieldTemplate.localBuilder(requestMessageTemplate).get();
-    requestMessageTemplate.setFields(asList(
+    final FieldTemplate.Builder requestBuilder = FieldTemplate.localBuilder().get();
+    final List<FieldTemplate> requestFields = asList(
         requestBuilder.f(3).name("procCode").desc("Processing Code").dim("fixed(6)").type("n").build(),
         requestBuilder.f(4).name("amount").desc("Amount, transaction (cents)").dim("fixed(12)").type("n").build(),
         requestBuilder.f(7).name("date").desc("Transmission Date and Time").dim("fixed(10)").type("date").build(),
@@ -105,11 +114,18 @@ public class BankMessageConfiguration {
         requestBuilder.f(60).name("adviceCode").desc("Advice/reason code").dim("lllvar(999)").type("ans").build(),
         requestBuilder.f(61).name("extraCode").desc("Additional code").dim("lllvar(999)").type("an").build(),
         requestBuilder.f(100).name("field100").desc("F100").dim("llvar(10)").type("an").build(),
-        requestBuilder.f(102).name("field102").desc("F102").dim("llvar(10)").type("an").build()));
+        requestBuilder.f(102).name("field102").desc("F102").dim("llvar(10)").type("an").build());
 
-    final MessageTemplate responseMessageTemplate = MessageTemplate.create("ISO015000055", MTI.create(0x0210), BitmapType.HEX);
-    final FieldTemplate.Builder responseBuilder = FieldTemplate.localBuilder(responseMessageTemplate).get();
-    responseMessageTemplate.setFields(asList(
+    final MessageTemplate requestMessageTemplate = MessageTemplate.Builder()
+        .type(MTI.create(0x0200))
+        .header("ISO015000050")
+        .name("Transaction Request")
+        .fieldlist(requestFields)
+        .build();
+
+
+    final FieldTemplate.Builder responseBuilder = FieldTemplate.localBuilder().get();
+    final List<FieldTemplate> responseFields = asList(
         responseBuilder.f(3).name("procCode").desc("Processing Code").dim("fixed(6)").type("n").build(),
         responseBuilder.f(4).name("amount").desc("Amount, transaction (cents)").dim("fixed(12)").type("n").build(),
         responseBuilder.f(7).name("date").desc("Transmission Date and Time").dim("fixed(10)").type("date").build(),
@@ -133,12 +149,20 @@ public class BankMessageConfiguration {
         responseBuilder.f(90).name("extraCode").desc("Additional code").dim("fixed(19)").type("ans").build(),
         responseBuilder.f(100).name("field100").desc("F100").dim("llvar(10)").type("an").build(),
         responseBuilder.f(102).name("field100").desc("F100").dim("llvar(10)").type("an").build(),
-        responseBuilder.f(126).name("accountNumber").desc("Primary Account Number").dim("lllvar(99)").type("ans").build()));
+        responseBuilder.f(126).name("accountNumber").desc("Primary Account Number").dim("lllvar(99)").type("ans").build());
+
+    final MessageTemplate responseMessageTemplate = MessageTemplate.Builder()
+        .type(MTI.create(0x0210))
+        .header("ISO015000055")
+        .name("Transaction Response")
+        .fieldlist(responseFields)
+        .build();
 
     return MessageFactory.Builder()
         .id("messageSet")
         .contentType(ContentType.TEXT)
         .bitmapType(BitmapType.HEX)
+        .charset(CharEncoder.ASCII)
         .autogen(new AutoGeneratorFactory(new StanGenerator(1, 999)))
         .templates(asList(requestMessageTemplate, responseMessageTemplate))
         .build();

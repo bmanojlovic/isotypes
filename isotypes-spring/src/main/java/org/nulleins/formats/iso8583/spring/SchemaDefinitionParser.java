@@ -1,8 +1,5 @@
 package org.nulleins.formats.iso8583.spring;
 
-import org.nulleins.formats.iso8583.FieldTemplate;
-import org.nulleins.formats.iso8583.MessageFactory;
-import org.nulleins.formats.iso8583.MessageTemplate;
 import org.nulleins.formats.iso8583.types.BitmapType;
 import org.nulleins.formats.iso8583.types.ContentType;
 import org.nulleins.formats.iso8583.types.Dimension;
@@ -51,7 +48,7 @@ public class SchemaDefinitionParser extends AbstractBeanDefinitionParser {
 
   private static AbstractBeanDefinition parseMessageSet(final Element element) {
     final BeanDefinitionBuilder messageSet
-        = BeanDefinitionBuilder.rootBeanDefinition(MessageFactory.class);
+        = BeanDefinitionBuilder.rootBeanDefinition(SpringMessageSchema.class);
     messageSet.addPropertyValue("id", element.getAttribute("id"));
     messageSet.addPropertyValue("header", element.getAttribute("header"));
     messageSet.addPropertyValue("strict", element.getAttribute("strict"));
@@ -85,20 +82,21 @@ public class SchemaDefinitionParser extends AbstractBeanDefinitionParser {
 
   private static AbstractBeanDefinition parseMessage(final MTI type, final Element element) {
     final BeanDefinitionBuilder result
-            = BeanDefinitionBuilder.rootBeanDefinition(MessageTemplate.class);
+            = BeanDefinitionBuilder.rootBeanDefinition(SpringMessageTemplate.class);
     result.addPropertyValue("type", type.toString());
-    result.addPropertyValue("name", element.getAttribute("name"));
+    result.addPropertyValue("name", element.getAttribute ("name"));
     return result.getBeanDefinition();
   }
 
   private static AbstractBeanDefinition parseField(final MTI type, final Element element) {
     final BeanDefinitionBuilder result
-           = BeanDefinitionBuilder.rootBeanDefinition(FieldTemplate.class);
+           = BeanDefinitionBuilder.rootBeanDefinition(SpringFieldTemplate.class);
 
     result.addPropertyValue("messageType", type.toString());
-    result.addPropertyValue("number", element.getAttribute("f"));
+    result.addPropertyValue("number", element.getAttribute ("f"));
     result.addPropertyValue("type", element.getAttribute("type"));
     result.addPropertyValue("autogen", element.getAttribute("autogen"));
+    result.addPropertyValue("defaultValue", element.getAttribute("defaultValue"));
     result.addPropertyValue("optional", element.getAttribute("optional"));
     result.addPropertyValue("name", element.getAttribute("name"));
     result.addPropertyValue("description", element.getAttribute("desc"));

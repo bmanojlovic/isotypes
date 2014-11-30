@@ -2,6 +2,7 @@ package org.nulleins.formats.iso8583.io;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.nulleins.formats.iso8583.FieldTemplate;
+import org.nulleins.formats.iso8583.formatters.TypeFormatter;
 import org.nulleins.formats.iso8583.types.BCD;
 import org.nulleins.formats.iso8583.types.CharEncoder;
 import org.nulleins.formats.iso8583.types.Dimension;
@@ -13,7 +14,7 @@ import java.io.IOException;
 
 
 /**
- * MessageWriter that encodes numeric fields as packed BCD values
+ * MessageWriter that encodes numeric fieldlist as packed BCD values
  * @author phillipsr
  */
 public class BCDMessageWriter
@@ -41,10 +42,10 @@ public class BCDMessageWriter
    * {@inheritDoc}
    */
   @Override
-  public void appendField(final FieldTemplate field, final Object data, final DataOutputStream output)
+  public void appendField(final TypeFormatter<?> formatter, final FieldTemplate field, final Object data, final DataOutputStream output)
       throws IOException {
     final Dimension dim = field.getDimension();
-    final byte[] inputValue = field.format(data);
+    final byte[] inputValue = field.format(data, formatter);
     String fieldValue = charCodec.getString(inputValue);
     if (dim.getType() == Dimension.Type.VARIABLE) {
       write(getVarLengthSpecifier(dim.getVSize(), fieldValue), output);

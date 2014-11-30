@@ -154,7 +154,7 @@ public class TestXsd {
     bean.setCurrencyCode(840);
     bean.setOriginalData(999);
 
-    // this map contains the technical/protocol fields
+    // this map contains the technical/protocol fieldlist
     final DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
     final DateFormat tf = new SimpleDateFormat("HH:mm:ss");
     final Map<Integer, Object> params = new HashMap<Integer, Object>() {{
@@ -221,13 +221,13 @@ public class TestXsd {
     /*
 		 * 4210001102C04804	Fields 2, 7, 12, 28, 32, 39, 41, 42, 50, 53, 62
 		 * Explanation of Bitmap (8 BYTE Primary Bitmap = 64 Bit) field 4210001102C04804
-		 * BYTE1 : 0100 0010 = 42x (fields 2 and 7 are present)
+		 * BYTE1 : 0100 0010 = 42x (fieldlist 2 and 7 are present)
 		 * BYTE2 : 0001 0000 = 10x (field 12 is present)
-		 * BYTE3 : 0000 0000 = 00x (no fields present)
-		 * BYTE4 : 0001 0001 = 11x (fields 28 and 32 are present)
+		 * BYTE3 : 0000 0000 = 00x (no fieldlist present)
+		 * BYTE4 : 0001 0001 = 11x (fieldlist 28 and 32 are present)
 		 * BYTE5 : 0000 0010 = 02x (field 39 is present)
-		 * BYTE6 : 1100 0000 = C0x (fields 41 and 42 are present)
-		 * BYTE7 : 0100 1000 = 48x (fields 50 and 53 are present)
+		 * BYTE6 : 1100 0000 = C0x (fieldlist 41 and 42 are present)
+		 * BYTE7 : 0100 1000 = 48x (fieldlist 50 and 53 are present)
 		 * BYTE8 : 0000 0100 = 04x (field 62 is present)
 		 */
     final MessageTemplate template = messages.getTemplate(MTI.create("0400"));

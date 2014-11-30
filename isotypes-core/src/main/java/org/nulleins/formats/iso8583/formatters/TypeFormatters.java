@@ -16,7 +16,7 @@ import java.util.Map;
 
 
 /**
- * The registry of type formatters used to parse and format the data fields in ISO8583 messages
+ * The registry of type formatters used to parse and format the data fieldlist in ISO8583 messages
  * <p/>
  * This class is instantiated per message factory, with the default formatters to handle the
  * standard ISO field types; these may be overridden in the schema, and custom formatters added

@@ -8,16 +8,16 @@ import org.nulleins.formats.iso8583.types.CharEncoder;
 import org.nulleins.formats.iso8583.types.ContentType;
 import org.nulleins.formats.iso8583.types.MTI;
 
+import java.util.List;
+
 import static java.util.Arrays.asList;
 
 public class CharMessageConfiguration {
 
   public static MessageFactory createMessageFactory() {
 
-    final MessageTemplate template = MessageTemplate.create("ISO015000077", MTI.create(0x0200), BitmapType.HEX);
-    template.setName("Acquirer Payment Request");
-    final FieldTemplate.Builder builder = FieldTemplate.localBuilder(template).get();
-    template.addFields(asList(
+    final FieldTemplate.Builder builder = FieldTemplate.localBuilder().get();
+    final List<FieldTemplate> requestFields = asList(
         builder.f(2).name("cardNumber").desc("Payment Card Number").dim("llvar(40)").type("n").build(),
         builder.f(3).name("processingCode").desc("Processing Code").dim("fixed(6)").type("n").build(),
         builder.f(4).name("amount").desc("Amount, transaction (cents)").dim("fixed(12)").type("n").build(),
@@ -31,7 +31,13 @@ public class CharMessageConfiguration {
         builder.f(43).name("cardTermName").desc("Card Acceptor Terminal Name").dim("fixed(40)").type("ans").build(),
         builder.f(48).name("msisdn").desc("Additional Data (MSISDN)").dim("llvar(14)").type("n").build(),
         builder.f(49).name("currencyCode").desc("Currency Code, Transaction").dim("fixed(3)").type("n").build(),
-        builder.f(90).name("originalData").desc("Original data elements").dim("lllvar(4)").type("xn").build()));
+        builder.f(90).name("originalData").desc("Original data elements").dim("lllvar(4)").type("xn").build());
+
+    final MessageTemplate template = MessageTemplate.Builder()
+        .header("ISO015000077")
+        .type(MTI.create(0x0200))
+        .fieldlist(requestFields)
+        .name("Acquirer Payment Request").build();
 
     return MessageFactory.Builder()
         .id("charMessageSet")

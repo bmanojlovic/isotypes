@@ -1,12 +1,17 @@
 package org.nulleins.formats.iso8583;
 
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Predicate;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import org.nulleins.formats.iso8583.formatters.TypeFormatter;
+import org.nulleins.formats.iso8583.formatters.TypeFormatters;
 import org.nulleins.formats.iso8583.types.Bitmap;
-import org.nulleins.formats.iso8583.types.BitmapType;
 import org.nulleins.formats.iso8583.types.MTI;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,37 +19,32 @@ import java.util.Map;
 
 
 /** A message template is the definition of a specific ISO8583 message, defining its type,
-  * content representation and the fields it can contain
+  * content representation and the field list it can contain
   * @author phillipsr */
 public class MessageTemplate {
-  /** ID of the message template instance (used by Spring) */
-  private String id;
   /** name of the template (i.e., the message it represents) */
-  private String name;
+  private final String name;
   /** header to be output at the start of a message (may be empty if none) */
-  private String header;
+  private final String header;
   /** ISO8583 message type indicator for the message represented by this template */
-  private MTI type;
+  private final MTI type;
   /** ISO8583 fields included in the target message */
-  private Map<Integer, FieldTemplate> fields = new HashMap<>();
+  private final Map<Integer, FieldTemplate> fields;
   /** mapping of logical names to field numbers */
-  private final Map<String, Integer> nameIndex = new HashMap<>();
+  private final Map<String, Integer> nameIndex;
   /** bitmap indicating the fields present in the message */
-  private final Bitmap bitmap = new Bitmap();
-  /** schema to which this template belongs: provides default values, e.g., contentType */
-  private MessageFactory schema;
+  private final Bitmap bitmap;
+
+  private Optional<TypeFormatters> formatters = Optional.absent();
 
   /** Factory method to create a message template with the supplied properties
     * @param header     to be output at start of message
     * @param mti        message type indicator
-    * @param bitmapType is a binary or hex bitmap to be used?
+    * @param name
+    * @param fields message field-list defining the template
     * @return empty message template instance for the message type specified */
-  public static MessageTemplate create(final String header, final MTI mti, final BitmapType bitmapType) {
-    return new MessageTemplate(header, mti);
-  }
-
-  /** default constructor, used by Spring */
-  MessageTemplate() {
+  public static MessageTemplate create(final String header, final MTI mti, final String name, final Map<Integer, FieldTemplate> fields) {
+    return new MessageTemplate(header, mti, name, fields);
   }
 
   /** instantiate a message template with the supplied properties
@@ -52,56 +52,48 @@ public class MessageTemplate {
     * @param mti    message type indicator
     * @param header
     * @param mti */
-  private MessageTemplate(final String header, final MTI mti) {
+  private MessageTemplate(final String header, final MTI mti, final String name, final Map<Integer, FieldTemplate> fields) {
     Preconditions.checkNotNull(header);
-    Preconditions.checkArgument(!header.isEmpty());
     Preconditions.checkNotNull(mti);
+    Preconditions.checkNotNull(fields);
+    Preconditions.checkArgument(!fields.isEmpty());
     this.header = header;
+    this.name = name;
     type = mti;
+    this.fields = ImmutableMap.copyOf(fields);
+    bitmap = createBitmap(fields);
+    final Map<String, Integer> nameIndex = new HashMap<>();
+    for (final FieldTemplate field : fields.values()) {
+      if ( field.getName() != null) {
+        nameIndex.put (field.getName (), field.getNumber ());
+      }
+    }
+    this.nameIndex = ImmutableMap.copyOf(nameIndex);
   }
 
   public String getName() {
     return name;
   }
-
-  public void setName(final String name) {
-    this.name = name;
-  }
-
-  public String getHeader() {
-    return header != null ? header : schema.getHeader();
-  }
-
+  public String getHeader() { return header; }
   public MTI getMessageType() {
     return type;
   }
-
   public String getType() {
     return type.toString();
   }
-
-  public void setType(final String mti) {
-    type = MTI.create(mti);
-  }
-
+  public Bitmap getBitmap() { return bitmap; }
   public Map<Integer, FieldTemplate> getFields() {
     return fields;
   }
 
-  /** Set the definition of the fields to be used in this message template,
-   * and calculate the bitmap describing their presence or otherwise, for
-   * all potential 192 fields (primary, secondary and tertiary bitmaps)
+  /** @return a bitmap set from the definition of the fields to be used in this message template,
    * @param fields Field-f keyed map of field templates */
-  public void setFields(final Map<Integer, FieldTemplate> fields) {
-    this.fields = fields;
-    bitmap.clear();
+  public Bitmap createBitmap(final Map<Integer, FieldTemplate> fields) {
+    Bitmap result = Bitmap.empty();
     for (final Integer fieldNb : fields.keySet()) {
-      bitmap.setField(fieldNb);
+      result = result.withField(fieldNb);
     }
-    nameIndex.clear();
-    for (final FieldTemplate field : fields.values()) {
-      nameIndex.put(field.getName(), field.getNumber());
-    }
+    return result;
   }
 
   /** @return a summary of this template, for logging/debugging usage */
@@ -110,43 +102,15 @@ public class MessageTemplate {
     return "MTI: " + type.describe()
         + " name: \"" + this.getName() + "\""
         + " header: [" + getHeader() + "]"
-        + " #fields: " + this.fields.size();
+        + " #fieldlist: " + this.fields.size();
   }
 
-  /** Add the supplied field <code>template</code> to the set of field in
-    * this message template, updating the bitmap to reflect its presence */
-  public void addField(final FieldTemplate template) {
-    template.setMessageTemplate(this);
-    fields.put(template.getNumber(), template);
-    bitmap.setField(template.getNumber());
-    // add the field to the name index, if set:
-    final String fieldName = template.getName();
-    if (fieldName != null && !fieldName.isEmpty()) {
-      nameIndex.put(template.getName(), template.getNumber());
-    }
-  }
-
-  public void setFields(final List<FieldTemplate> fields) {
-    for ( final FieldTemplate field : fields) {
-      addField(field);
-    }
-  }
-
-  /** @return the bitmap for this message template */
-  public Bitmap getBitmap() {
-    return bitmap;
-  }
-
-  /** Associate this template with the supplied <code>messageFactory</code>
-    * to which this message template will belong */
-  public void setSchema(final MessageFactory messageFactory) {
-    this.schema = messageFactory;
-  }
-
-  /** @return a formatter capable of formatting.parsing a field of <code>type</code>
+  /** @return a formatter capable of formatting/parsing a field of <code>type</code>
     * @throws MessageException if not formatter registered for the supplied field type */
   TypeFormatter<?> getFormatter(final String type) {
-    return schema.getFormatter(type);
+    Preconditions.checkState(formatters.isPresent() && formatters.get().hasFormatter(type),
+        "Template must have a formatter for field type: " + type);
+    return formatters.get().getFormatter(type);
   }
 
   /** @return a list of errors detected, or an empty list, if message is valid
@@ -167,11 +131,32 @@ public class MessageTemplate {
       final Optional<Object> msgField = message.getFields().get(field.getNumber());
       if (msgField == null || !msgField.isPresent()) {
         result.add("Message field missing (" + field + ")");
-      } else if (!field.validValue(msgField.get())) {
+      } else if (!validValue(msgField.get(), field)) {
         result.add("Message field data invalid (" + msgField.get() + ") for field: " + field);
       }
     }
     return result;
+  }
+
+  /** @return true if <code>value</code> is a valid value for the field described herein */
+  private boolean validValue(final Object value, final FieldTemplate field) {
+    Preconditions.checkState(formatters.isPresent() && formatters.get().hasFormatter(field.getType()),
+        "Template must have a formatter for field type: " + field.getType());
+    return formatters.get().getFormatter(field.getType()).isValid(value, field.getType(), field.getDimension());
+  }
+
+  Object parse(final byte[] data, final FieldTemplate field) {
+    Preconditions.checkNotNull(data);
+    Preconditions.checkNotNull(field);
+    Preconditions.checkState(formatters.isPresent() && formatters.get().hasFormatter(field.getType()),
+        "Template must have a formatter for field type: " + field.getType());
+    final String type = field.getType();
+    try {
+      return formatters.get().getFormatter(type).parse(type, field.getDimension(), data.length, data);
+    } catch (final ParseException e) {
+      final String value = new String(data);
+      throw new MessageException("Failed to parse field: " + this + ", with value ["+value+"]", e);
+    }
   }
 
   /** @return true if field# <code>fieldNumber</code> is present in this message */
@@ -188,9 +173,60 @@ public class MessageTemplate {
     return nameIndex.get(fieldName);
   }
 
-  public void addFields(final List<FieldTemplate> fieldTemplates) {
-    for(final FieldTemplate template : fieldTemplates) {
-      addField(template);
+  public MessageTemplate with(final TypeFormatters formatters) {
+    Preconditions.checkNotNull(formatters);
+    final MessageTemplate result = MessageTemplate.create(header, type, name, fields);
+    result.formatters = Optional.of(formatters);
+    return result;
+  }
+
+  public static Builder Builder() {
+    return new Builder();
+  }
+
+  public static class Builder {
+    private MTI type;
+    private String name;
+    private String header;
+    private Map<Integer,FieldTemplate> fields;
+
+    public MessageTemplate build() {
+      return MessageTemplate.create(header,type,name,fields);
+    }
+
+    public Builder type(final MTI type) {
+      this.type = type;
+      return this;
+    }
+
+    public Builder name(final String name) {
+      this.name = name;
+      return this;
+    }
+
+    public Builder header(final String header) {
+      this.header = header;
+      return this;
+    }
+
+    public Builder fieldlist(final List<FieldTemplate> fields) {
+      this.fields = Maps.uniqueIndex(fields, keyFunction());
+      return this;
+    }
+
+    public Builder fieldmap(final Map<Integer,FieldTemplate> fields) {
+      this.fields = fields;
+      return this;
     }
   }
+
+  private static Function<FieldTemplate, Integer> keyFunction() {
+    return new Function<FieldTemplate,Integer>() {
+      @Override
+      public Integer apply(final FieldTemplate input) {
+        return input.getNumber();
+      }
+    };
+  }
+
 }

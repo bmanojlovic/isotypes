@@ -82,7 +82,7 @@ public class MessageParser {
       public Object apply(final Integer fieldNum) {
         final FieldTemplate field = template.getFields().get(fieldNum);
         try {
-          return field.parse(reader.readField(field, input));
+          return template.parse(reader.readField(field, input), field);
         } catch ( Throwable t) {
           throw Throwables.propagate(t);
         }

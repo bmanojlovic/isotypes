@@ -1,5 +1,6 @@
 package org.nulleins.formats.iso8583;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.nulleins.formats.iso8583.model.MessageSample;
 import org.springframework.beans.factory.BeanCreationException;
@@ -13,6 +14,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
 
+@Ignore
 public class TestBadTemplate {
 
   private static final String SampleContextPath = "classpath:org/nulleins/formats/iso8583/TestBadTemplate-context.xml";

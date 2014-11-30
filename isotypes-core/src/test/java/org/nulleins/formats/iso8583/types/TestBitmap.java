@@ -17,18 +17,16 @@ import static org.hamcrest.core.Is.is;
 public class TestBitmap {
   @Test
   public void testBitmap() {
-    final Bitmap target = new Bitmap();
-
-		/* 
+		/*
 		 * 4210001102C04804	Fields 2, 7, 12, 28, 32, 39, 41, 42, 50, 53, 62
 		 * Explanation of Bitmap (8 BYTE Primary Bitmap = 64 Bit) field 4210001102C04804
-		 * BYTE1 : 0100 0010 = 42x (fields 2 and 7 are present)
+		 * BYTE1 : 0100 0010 = 42x (fieldlist 2 and 7 are present)
 		 * BYTE2 : 0001 0000 = 10x (field 12 is present)
-		 * BYTE3 : 0000 0000 = 00x (no fields present)
-		 * BYTE4 : 0001 0001 = 11x (fields 28 and 32 are present)
+		 * BYTE3 : 0000 0000 = 00x (no fieldlist present)
+		 * BYTE4 : 0001 0001 = 11x (fieldlist 28 and 32 are present)
 		 * BYTE5 : 0000 0010 = 02x (field 39 is present)
-		 * BYTE6 : 1100 0000 = C0x (fields 41 and 42 are present)
-		 * BYTE7 : 0100 1000 = 48x (fields 50 and 53 are present)
+		 * BYTE6 : 1100 0000 = C0x (fieldlist 41 and 42 are present)
+		 * BYTE7 : 0100 1000 = 48x (fieldlist 50 and 53 are present)
 		 * BYTE8 : 0000 0100 = 04x (field 62 is present)
 		 * 
 		 * Expect:
@@ -37,18 +35,18 @@ public class TestBitmap {
 		 * 
 		 * 00100000 00010010 00000011 01000000 10001000 00000000 00001000 01000010
 		 */
-
-    target.setField(2);
-    target.setField(7);
-    target.setField(12);
-    target.setField(28);
-    target.setField(32);
-    target.setField(39);
-    target.setField(41);
-    target.setField(42);
-    target.setField(50);
-    target.setField(53);
-    target.setField(62);
+    final Bitmap target = Bitmap.empty()
+      .withField(2)
+      .withField(7)
+      .withField(12)
+      .withField(28)
+      .withField(32)
+      .withField(39)
+      .withField(41)
+      .withField(42)
+      .withField(50)
+      .withField(53)
+      .withField(62);
 
     assertThat(target.isFieldPresent(2), is(true));
     assertThat(target.isFieldPresent(7), is(true));
@@ -78,10 +76,7 @@ public class TestBitmap {
 
   @Test
   public void testSecondaryBitmap() {
-    final Bitmap target = new Bitmap();
-
-    target.setField(2);
-    target.setField(66);
+    final Bitmap target = Bitmap.empty().withField(2).withField(66);
 
     assertThat(target.isFieldPresent(2), is(true));
     assertThat(target.isFieldPresent(66), is(true));
@@ -106,10 +101,9 @@ public class TestBitmap {
 
   @Test
   public void testTertiaryBitmap() {
-    final Bitmap target = new Bitmap();
-
-    target.setField(2);
-    target.setField(140);
+    final Bitmap target = Bitmap.empty()
+        .withField(2)
+        .withField(140);
 
     assertThat(target.isFieldPresent(2), is(true));
     assertThat(target.isFieldPresent(140), is(true));
@@ -133,9 +127,7 @@ public class TestBitmap {
 
   @Test
   public void testTertiaryBitmap2() {
-    final Bitmap target = new Bitmap();
-
-    target.setField(190);
+    final Bitmap target = Bitmap.empty().withField(190);
     assertThat(target.isBitmapPresent(Bitmap.Id.PRIMARY), is(true));
     assertThat(target.isBitmapPresent(Bitmap.Id.SECONDARY), is(true));
     assertThat(target.isBitmapPresent(Bitmap.Id.TERTIARY), is(true));
@@ -309,12 +301,6 @@ public class TestBitmap {
       result[index++] = b;
     }
     return result;
-  }
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testBitmapSetFieldMissing() {
-    final Bitmap target = Bitmap.parse("4210001102C04804");
-    target.setField(1);
   }
 
   @Test(expected = NullPointerException.class)

@@ -17,7 +17,7 @@ import static org.junit.Assert.fail;
 public class RunSamples {
   private final MessageFactory factory = SampleMessageConfiguration.createMessageFactory();
 
-  /** Business-significant fields to include in message */
+  /** Business-significant fieldlist to include in message */
   private static final PaymentRequestBean Request = new PaymentRequestBean() {{
     setCardNumber(new CardNumber(12345678901234L));
     setAmount(BigInteger.TEN);

@@ -18,7 +18,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
 /**
- * Test message transformation using EBCDIC character set encoding for text fields
+ * Test message transformation using EBCDIC character set encoding for text fieldlist
  * @author phillipsr
  */
 public class EncodingTest {

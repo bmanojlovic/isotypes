@@ -35,7 +35,9 @@ public class CharEncoder {
 
   /** @return a byte array in this character encoding, initialized from the byte data supplied
     * @param data String to be converted a byte character using this character encoding */
-  public byte[] getBytes(final String data) {return data.getBytes(charset);
+  public byte[] getBytes(final String data) {
+    Preconditions.checkNotNull(data, "cannot get bytes of a null String");
+    return data.getBytes(charset);
   }
 
   /** @return a byte array in this character encoding, initialized from the byte data supplied

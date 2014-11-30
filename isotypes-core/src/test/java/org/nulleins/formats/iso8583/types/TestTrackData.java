@@ -69,12 +69,13 @@ public class TestTrackData {
 
   @Test
   public void testFormatT1() {
-    final TrackData value = new TrackData(TrackData.Track.TRACK1);
-    value.setName(new String[]{"EARIBUG", "HUW", "", ""});
-    value.setPrimaryAccountNumber(1234567890123445L);
-    value.setExpirationDate(9901);
-    value.setServiceCode(120);
-    value.setDiscretionaryData("0000000000000**XXX******");
+    final TrackData value = TrackData.Builder()
+        .type (TrackData.Track.TRACK1)
+    .name(new String[]{"EARIBUG", "HUW", "", ""})
+    .primaryAccountNumber(1234567890123445L)
+    .expirationDate(9901)
+    .serviceCode(120)
+    .discretionaryData("0000000000000**XXX******"). build ();
     final byte[] result = formatter.format(FieldType.TRACKDATA, value, Dimension.parse("LLVAR(80)"));
     assertThat(new String(result),
         is("B1234567890123445^EARIBUG/HUW.              99011200000000000000**XXX******"));
@@ -82,11 +83,12 @@ public class TestTrackData {
 
   @Test
   public void testFormatT2() {
-    final TrackData value = new TrackData(TrackData.Track.TRACK2);
-    value.setPrimaryAccountNumber(1234567890123456789L);
-    value.setExpirationDate(1015);
-    value.setServiceCode(123);
-    value.setDiscretionaryData("");
+    final TrackData value =  TrackData.Builder()
+    .type (TrackData.Track.TRACK2)
+    .primaryAccountNumber(1234567890123456789L)
+    .expirationDate(1015)
+    .serviceCode(123)
+    .discretionaryData("").build ();
     final byte[] result = formatter.format(FieldType.TRACKDATA, value, Dimension.parse("LLVAR(80)"));
     assertThat(new String(result), is("1234567890123456789=1015123"));
   }

@@ -13,7 +13,7 @@ import java.io.IOException;
 
 
 /** Generic class to read ISO8583 message from a data stream; interpretation of
-  * numeric fields is deferred to specific subclasses (e.g., BCD, character)
+  * numeric fieldlist is deferred to specific subclasses (e.g., BCD, character)
   * @author phillipsr */
 public abstract class MessageReader {
   protected CharEncoder charCodec;

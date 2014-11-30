@@ -7,7 +7,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Specification of the dim of an ISO8583 field: fields can
+ * Specification of the dim of an ISO8583 field: fieldlist can
  * be of fixed or variable length (hollerith)
  * @author phillipsr
  */

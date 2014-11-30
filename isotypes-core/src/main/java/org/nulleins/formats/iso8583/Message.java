@@ -84,7 +84,7 @@ public final class Message implements Comparable<Message> {
     return new Describer(template, fields);
   }
 
-  /** @return true if message is valid, according to it's template (all the required fields are present) */
+  /** @return true if message is valid, according to it's template (all the required fieldlist are present) */
   public boolean isValid() {
     return ListUtils.EMPTY_LIST.equals(this.validate());
   }
@@ -100,9 +100,11 @@ public final class Message implements Comparable<Message> {
     return this.toString().compareTo(other.toString());
   }
 
+
   public Message withValues(final Map<Integer, Optional<Object>> fieldValues) {
     return new Message(template,header,fieldValues);
   }
+
 
   /** @return a new builder, for constructing messages */
   public static Builder Builder() {

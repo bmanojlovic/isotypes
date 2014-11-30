@@ -34,16 +34,18 @@ public class MessageSample {
   }
 
   public void sendMessage(final int mti, final PaymentRequestBean request) throws IOException, ParseException {
-    final Date dateTime = (new SimpleDateFormat("dd-MM-yyyy HH:mm:ss")).parse("01-01-2013 10:15:30");
-    final TrackData track1data = new TrackData(Track.TRACK1);
-    track1data.setPrimaryAccountNumber(123456789L);
-    track1data.setName(new String[]{"Bugg", "Harry", "H", "Mr"});
-    track1data.setExpirationDate(1212);
-    track1data.setServiceCode(120);
-    final TrackData track2data = new TrackData(Track.TRACK2);
-    track2data.setPrimaryAccountNumber(track1data.getPrimaryAccountNumber());
-    track2data.setExpirationDate(track1data.getExpirationDate());
-    track2data.setServiceCode(track1data.getServiceCode());
+    final Date dateTime = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").parse("01-01-2013 10:15:30");
+    final TrackData track1data = TrackData.Builder()
+    .type(Track.TRACK1)
+    .primaryAccountNumber(123456789L)
+    .name(new String[]{"Bugg", "Harry", "H", "Mr"})
+    .expirationDate(1212)
+    .serviceCode(120).build ();
+    final TrackData track2data = TrackData.Builder()
+    .type(Track.TRACK2)
+    .primaryAccountNumber(track1data.getPrimaryAccountNumber())
+    .expirationDate(track1data.getExpirationDate())
+    .serviceCode(track1data.getServiceCode()).build ();
 
     // instantiate request from business object
     final Message message = factory.createFromBean(MTI.create(mti), request,
@@ -65,7 +67,7 @@ public class MessageSample {
     // check the message is good-to-go:
     final List<String> errors = message.validate();
     if (!errors.isEmpty()) {
-      throw new MessageException(errors);
+      throw new MessageException(errors.toString ());
     }
 
     // write it to the dummy output stream:

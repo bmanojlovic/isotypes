@@ -36,6 +36,7 @@ public class BitsetUtil {
     * by ISO8583 bitmap (hex) format, of the specified <code>minLength</code>
     * (right-padded with "00" if required) */
   static String bitset2Hex(final BitSet bitset, final int minLength) {
+    Preconditions.checkNotNull(bitset);
     final StringBuilder result = new StringBuilder();
     for (int bytenum = 0; bytenum < minLength / 2; bytenum++) {
       byte v = 0;

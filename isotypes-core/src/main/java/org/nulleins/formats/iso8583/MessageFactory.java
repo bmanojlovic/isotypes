@@ -6,6 +6,7 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Maps.EntryTransformer;
 import org.apache.commons.beanutils.PropertyUtils;
@@ -41,7 +42,7 @@ import java.util.TreeSet;
  * creating and parsing ISO8583 templates
  * <p/>
  * Usually configured via an XML specification (<code>&lt;iso:schema&gt;</code>),
- * it may also be created by setting the following fields and calling <code>initialize()</code>:
+ * it may also be created by setting the following fieldlist and calling <code>initialize()</code>:
  * <dl>
  * <dt>header</dt><dd>Text header to prepend to templates, e.g., ISO015000077</dd>
  * <dt>templates</dt><dd>A map of MTI:MessageTemplates, defining the templates
@@ -52,47 +53,48 @@ import java.util.TreeSet;
  * </dl>
  * @author phillipsr */
 public class MessageFactory {
-  private final Map<MTI, MessageTemplate> templates = new HashMap<>();
-  private BitmapType bitmapType = BitmapType.HEX;
-  private ContentType contentType = ContentType.TEXT;
-  private CharEncoder charset = CharEncoder.ASCII;
-  private String header = "";
-  private String description;
-  private String id;
-  private boolean strict = Boolean.TRUE;
-  private TypeFormatters formatters;
-  private MessageParser parser;
+  private final Map<MTI, MessageTemplate> templates;
+  private final BitmapType bitmapType;
+  private final ContentType contentType;
+  private final CharEncoder charset;
+  private final String header;
+  private final String description;
+  private final String id;
+  private final TypeFormatters formatters;
+  private final MessageParser parser;
 
   private Optional<AutoGeneratorFactory> autoGenerator = Optional.absent();
 
-  MessageFactory() {
-  }
-
-  public void initialize() {
-    if (templates == null || templates.isEmpty()) {
-      throw new IllegalStateException("Factory has no message definitions: cannot be initialized");
+  private MessageFactory(
+      final String id, final String description, final String header, final ContentType contentType,
+      final BitmapType bitmapType, final CharEncoder charset, final AutoGeneratorFactory autogen, final List<MessageTemplate> templates, final Map<String, TypeFormatter<?>> formatterMap) {
+    Preconditions.checkArgument(templates != null && !templates.isEmpty(), "Factory must have message template definitions");
+    this.id = id;
+    this.description = description;
+    this.header = header != null ? header : "";
+    this.contentType = contentType;
+    this.bitmapType = bitmapType;
+    this.charset = charset;
+    this.autoGenerator = Optional.fromNullable(autogen);
+    this.formatters = new TypeFormatters(this.charset);
+    if ( formatterMap != null) {
+      for (final Map.Entry<String, TypeFormatter<?>> item : formatterMap.entrySet()) {
+        this.formatters.setFormatter(item.getKey(), item.getValue());
+      }
     }
-    if (formatters == null) {
-      formatters = new TypeFormatters(charset);
-    }
-    if (parser == null) {
-      parser = MessageParser.create(header, templates, contentType, charset, bitmapType);
-    }
-  }
-
-  public void initialize(final Map<String, TypeFormatter<?>> formatterList, final List<MessageTemplate> templateList) {
-    formatters = new TypeFormatters(charset);
-    for (final Map.Entry<String, TypeFormatter<?>> item : formatterList.entrySet()) {
-      this.addFormatter(item.getKey(), item.getValue());
-    }
-    if (!templateList.isEmpty()) {
-      this.addTemplates(templateList);
-    }
-    initialize();
-  }
-
-  public void setStrict(final boolean strict) {
-    this.strict = strict;
+    final Iterable<MessageTemplate> localTemplates = Iterables.transform(templates, new Function<MessageTemplate, MessageTemplate>() {
+      @Override
+      public MessageTemplate apply(MessageTemplate input) {
+        return input.with(formatters);
+      }
+    });
+    this.templates = Maps.uniqueIndex(localTemplates, new Function<MessageTemplate, MTI>() {
+      @Override
+      public MTI apply(final MessageTemplate input) {
+        return input.getMessageType();
+      }
+    });
+    parser = MessageParser.create(header, this.templates, contentType, this.charset, bitmapType);
   }
 
   /** @return the default bitmap type used in this factory */
@@ -100,34 +102,13 @@ public class MessageFactory {
     return bitmapType;
   }
 
-  /** Set the bitmap type, one of BINARY or HEX
-   * @param bitmapType
-   * @throws IllegalArgumentException if bitmapType is null */
-  public void setBitmapType(final BitmapType bitmapType) {
-    Preconditions.checkNotNull(bitmapType, "bitmapType may not be null");
-    this.bitmapType = bitmapType;
-  }
-
   /** Answer with the default message context type used in this factory */
   public ContentType getContentType() {
     return contentType;
   }
 
-  /** Set the message (numeric) content type, one of ASCII, EBCDIC or BCD
-   * @param contentType
-   * @throws IllegalArgumentException if the content type is null */
-  public void setContentType(final ContentType contentType) {
-    Preconditions.checkNotNull(contentType, "contentType cannot not be null, must be one of: " + Arrays.toString(ContentType.values()));
-    this.contentType = contentType;
-  }
-
   public CharEncoder getCharset() {
     return charset;
-  }
-
-  public void setCharset(final CharEncoder charset) {
-    Preconditions.checkNotNull(charset, "charset cannot be null");
-    this.charset = charset;
   }
 
   /** @return the header field value used (can be null) */
@@ -135,23 +116,9 @@ public class MessageFactory {
     return header;
   }
 
-  /** Set the value of the header field, prepended to templates generated by,
-   * and expected at the start of templates parsed by this factory
-   * @param header field value (can be null or empty) */
-  public void setHeader(final String header) {
-    this.header = header;
-  }
-
   /** @return the text desc of this factory: not used in message creatio */
   public String getDescription() {
     return description;
-  }
-
-  /** Set the desc of this factory; this is for documentary purposes, and is
-   * usually set from with the iso:schema XML element
-   * @param description */
-  public void setDescription(final String description) {
-    this.description = description;
   }
 
   /** @return the Spring bean ID */
@@ -159,31 +126,10 @@ public class MessageFactory {
     return id;
   }
 
-  /** Set the Spring bean ID for this factory; typically only used
-   * for referencing the factory bean for Spring usage
-   * @param id */
-  public void setId(final String id) {
-    this.id = id;
-  }
-
-  /** Set Auto-generator to use for the automatic generation of field values;
-   * this is an optional dependency, and will only be used of fields are
-   * defined in the schema with an 'autogen' property.
-   * </p>
-   * The usual way to set this field is via Spring IoC */
-  public void setAutoGeneratorFactory(final AutoGeneratorFactory autoGenerator) {
-    this.autoGenerator = Optional.of(autoGenerator);
-  }
 
   /** @return the ISO8583 templates defined in this factory's schema */
   public Collection<MessageTemplate> getTemplates() {
     return templates.values();
-  }
-
-  /** Add a <code>message</code> to this factory's schema */
-  public void addTemplate(final MessageTemplate message) {
-    message.setSchema(this);
-    this.templates.put(message.getMessageType(), message);
   }
 
   /** @return a string representation of this message factory */
@@ -196,6 +142,32 @@ public class MessageFactory {
         + " charset=" + getCharset()
         + " bitmapType=" + getBitmapType()
         + (templates != null ? (" templates# " + templates.size()) : "");
+  }
+
+
+  /** @return transform <code>original</code> message to the <code>messageType</code> specified
+   * (usually a response), setting its fields from the other fields ("move-corresponding" semantics),
+   * and adding new fields that may be required in the new message
+   * @param messageType    type of target mMessageTemplateessage
+   * @param original message to duplicate
+   * @param extraFields required for new message */
+  public Message transform(final MTI messageType, final Message original, final HashMap<String, Object> extraFields) {
+    final MessageTemplate template = templates.get(messageType);
+    final Map<Integer, Object> fieldValues = new HashMap<Integer, Object>() {{
+      putAll(Maps.transformEntries(template.getFields(), mapValuesByName(extraFields)));
+      putAll(Maps.transformValues(Maps.filterEntries(original.getFields(),
+          new Predicate<Entry<Integer, Optional<Object>>> () {
+            @Override
+            public boolean apply(final Entry<Integer, Optional<Object>> input) {
+              return template.isFieldPresent(input.getKey());
+            }
+          }), fromOptional()));
+    }};
+    return Message.Builder()
+        .template (template)
+        .header (original.getHeader())
+        .fields (fieldValues)
+        .build();
   }
 
   /** @return a new ISO8583 message instance of the type requested, setting the field values
@@ -211,7 +183,7 @@ public class MessageFactory {
       .fields(params).build();
   }
 
-  /** @return the map of fields that were written a message to the supplied <code>output</code> stream
+  /** @return the map of fieldlist that were written a message to the supplied <code>output</code> stream
    * @param message
    * @param output
    * @throws java.io.IOException
@@ -241,7 +213,7 @@ public class MessageFactory {
     writer.appendMTI(type, dos);
     writer.appendBitmap(template.getBitmap(), bitmapType, dos);
 
-    // Iterate over the fields in order of field f, appending the field's data to the output stream
+    // Iterate over the fieldlist in order of field f, appending the field's data to the output stream
     final Map<Integer, Optional<Object>> result = new HashMap<>();
     for (final Integer key : new TreeSet<>(template.getFields().keySet())) {
       final FieldTemplate fieldTemplate = template.getFields().get(key);
@@ -274,7 +246,7 @@ public class MessageFactory {
       Preconditions.checkState(data.isPresent(),"No value for field: " + field);
     }
     if (data.isPresent()) {
-      writer.appendField(field, data.get(), dos);
+      writer.appendField(formatters.getFormatter(field.getType()),field, data.get(), dos);
     }
     return data;
   }
@@ -305,7 +277,7 @@ public class MessageFactory {
    * values from properties of the <code>bean</code>, as named in the Message template
    * 'name' field
    * @param type (MTI) of ISO message to create
-   * @param bean holding value to populate message fields
+   * @param bean holding value to populate message fieldlist
    * @throws IllegalArgumentException if the type supplied is not defined in this factory's schema */
   public Message createFromBean(final MTI type, final Object bean, final Map<Integer, Object> extraFields) {
     Preconditions.checkArgument(templates.containsKey(type), "Message not defined for MTI=" + type);
@@ -320,18 +292,6 @@ public class MessageFactory {
   public MessageTemplate getTemplate(final MTI type) {
     Preconditions.checkArgument(canBuild(type), "Template for " + type + " not defined");
     return templates.get(type);
-  }
-
-  /** set <code>formatter</code> to handle formatting and parsing fields of <code>type</code> */
-  public void addFormatter(final String type, final TypeFormatter<?> formatter) {
-    formatters.setFormatter(type, formatter);
-  }
-
-  /** @return the formatter for message <code>type</code> */
-  TypeFormatter<?> getFormatter(final String type) {
-    Preconditions.checkArgument(formatters.hasFormatter(type),
-        "No formatter registered for field type=[" + type + "] in " + formatters);
-    return formatters.getFormatter(type);
   }
 
   /** @return a message parsed from the supplied <code>bytes</code> array (message data)
@@ -363,7 +323,7 @@ public class MessageFactory {
    * from the supplied parameter map, matching the names in the
    * <code>&lt;iso:message&gt;</code> configuration for this message type
    * @param type   MTI of the message to be created
-   * @param params map of message fields, keyed by names
+   * @param params map of message fieldlist, keyed by names
    * @throws IllegalArgumentException if the type is not defined in this factory's schema */
   public Message createByNames(final MTI type, final Map<String, Object> params) {
     Preconditions.checkArgument(templates.containsKey(type), "Message not defined for MTI=" + type);
@@ -382,31 +342,6 @@ public class MessageFactory {
     return Message.Builder()
         .template(template)
         .fields(fields).build();
-  }
-
-  /** @return transform <code>original</code> message to the <code>messageType</code> specified
-   * (usually a response), setting its fields from the other fields ("move-corresponding" semantics),
-   * and adding new fields that may be required in the new message
-   * @param messageType    type of target message
-   * @param original message to duplicate
-   * @param extraFields required for new message */
-  public Message transform(final MTI messageType, final Message original, final HashMap<String, Object> extraFields) {
-    final MessageTemplate template = templates.get(messageType);
-    final Map<Integer, Object> fieldValues = new HashMap<Integer, Object>() {{
-      putAll(Maps.transformEntries(template.getFields(), mapValuesByName(extraFields)));
-      putAll(Maps.transformValues(Maps.filterEntries(original.getFields(),
-          new Predicate<Entry<Integer, Optional<Object>>>() {
-            @Override
-            public boolean apply(final Entry<Integer, Optional<Object>> input) {
-              return template.isFieldPresent(input.getKey());
-            }
-          }), fromOptional()));
-    }};
-    return Message.Builder()
-        .template(template)
-        .header(original.getHeader())
-        .fields(fieldValues)
-        .build();
   }
 
   public static Function<Optional<Object>, Object> fromOptional() {
@@ -454,11 +389,11 @@ public class MessageFactory {
     }
   }
 
-  public void addTemplates(final List<MessageTemplate> messages) {
+/*  public void addTemplates(final List<MessageTemplate> messages) {
     for (final MessageTemplate message : messages) {
       addTemplate(message);
     }
-  }
+  }*/
 
   public static Builder Builder() {
     return new Builder();
@@ -533,24 +468,8 @@ public class MessageFactory {
       Preconditions.checkNotNull(id);
       Preconditions.checkNotNull(contentType);
       Preconditions.checkNotNull(bitmapType);
-      final MessageFactory result = new MessageFactory();
-      result.setId(id);
-      result.setContentType(contentType);
-      result.setBitmapType(bitmapType);
-      if (description != null) {
-        result.setDescription(description);
-      }
-      if (header != null) {
-        result.setHeader(header);
-      }
-      if (charset != null) {
-        result.setCharset(charset);
-      }
-      if (autogen != null) {
-        result.setAutoGeneratorFactory(autogen);
-      }
-      result.initialize(formatters, templates);
-      return result;
+      return new MessageFactory(
+          id,description,header,contentType,bitmapType,charset,autogen,templates,formatters);
     }
   }
 

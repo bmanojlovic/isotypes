@@ -63,7 +63,8 @@ public final class MessageConfig {
       charset = Optional.of(new CharEncoder(schema.getString("charset")));
     }
     schema.getString("charset");
-    final List<MessageTemplate> messages = FluentIterable.from(schema.getConfigList("messages"))
+    final List<MessageTemplate> messages = FluentIterable
+        .from(schema.getConfigList("messages"))
         .transform(buildMessageTemplate(header, bitmapType)).toList();
     final MessageFactory result = MessageFactory.Builder()
         .id(id)
@@ -84,18 +85,20 @@ public final class MessageConfig {
       @Override
       public MessageTemplate apply(final Config input) {
         final MTI mti = MTI.create(input.getString("type"));
-        final MessageTemplate template = MessageTemplate.create(header, mti, bitmapType);
-        if (input.hasPath("name")) {
-          template.setName(input.getString("name"));
-        }
-        template.setFields(getFields(template, input.getObject("fields").unwrapped()));
-        return template;
+        final String name = input.hasPath("name") ? input.getString("name") : "";
+        final Map<Integer, FieldTemplate> fields = getFields(input.getObject("fields").unwrapped());
+        return  MessageTemplate.Builder()
+          .name(name)
+          .header(header)
+          .type(mti)
+          .fieldmap(fields)
+          .build();
       }
     };
   }
 
   /** @return a map of field numbers to field templates, constructed from the supplied <code>fieldList</code> */
-  private Map<Integer, FieldTemplate> getFields(final MessageTemplate template, final Map<String, Object> fieldList) {
+  private Map<Integer, FieldTemplate> getFields(final Map<String, Object> fieldList) {
     final Map<Integer, FieldTemplate> result = new HashMap<>();
     for (final Map.Entry<String, Object> entry : fieldList.entrySet()) {
       if (!Map.class.isAssignableFrom(entry.getValue().getClass())) {
@@ -104,14 +107,14 @@ public final class MessageConfig {
       final int fieldNumber = Integer.valueOf(entry.getKey());
       @SuppressWarnings("unchecked")
       final Map<String, Object> value = (Map<String, Object>) entry.getValue();
-      result.put(fieldNumber, getFieldDefinition(fieldNumber, template, value));
+      result.put(fieldNumber, getFieldDefinition(fieldNumber, value));
     }
     return result;
   }
 
   /** @return a field template configured from the supplied <code>fieldConfig</code> map */
-  private FieldTemplate getFieldDefinition(final int fieldNumber, final MessageTemplate template, final Map<String, Object> fieldConfig) {
-    return FieldTemplate.localBuilder(template).get()
+  private FieldTemplate getFieldDefinition(final int fieldNumber, final Map<String, Object> fieldConfig) {
+    return FieldTemplate.localBuilder().get()
         .f(fieldNumber)
         .name((String) fieldConfig.get("name"))
         .desc((String) fieldConfig.get("desc"))

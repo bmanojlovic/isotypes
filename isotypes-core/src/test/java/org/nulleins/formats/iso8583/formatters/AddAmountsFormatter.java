@@ -28,7 +28,7 @@ import java.util.List;
  */
 public class AddAmountsFormatter
     extends TypeFormatter<PostilionAddAmount[]> {
-  private static final int Segmentlength = 20; // size of the recurring fields segment
+  private static final int Segmentlength = 20; // size of the recurring fieldlist segment
   private final TypeFormatter<BigInteger> numberFormatter;
 
   public AddAmountsFormatter() {
@@ -41,7 +41,7 @@ public class AddAmountsFormatter
       throws ParseException {
     final String field = new String(data);
     final List<PostilionAddAmount> result = new ArrayList<>(6);
-    // split into 20-char fields
+    // split into 20-char fieldlist
     for (int p = 0; p < field.length(); p += Segmentlength) {
       final String segment = field.substring(p, p + Segmentlength);
       final int accountType = numberFormatter.parse(

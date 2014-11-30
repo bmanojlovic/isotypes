@@ -4,8 +4,11 @@ import org.nulleins.formats.iso8583.FieldTemplate;
 import org.nulleins.formats.iso8583.MessageFactory;
 import org.nulleins.formats.iso8583.MessageTemplate;
 import org.nulleins.formats.iso8583.types.BitmapType;
+import org.nulleins.formats.iso8583.types.CharEncoder;
 import org.nulleins.formats.iso8583.types.ContentType;
 import org.nulleins.formats.iso8583.types.MTI;
+
+import java.util.List;
 
 import static java.util.Arrays.asList;
 
@@ -13,9 +16,8 @@ public class BinaryMessageConfiguration {
 
   public static MessageFactory createMessageFactory() {
 
-    final MessageTemplate requestMessageTemplate = MessageTemplate.create("ISO015000077", MTI.create(0x0200), BitmapType.BINARY);
-    final FieldTemplate.Builder requestBuilder = FieldTemplate.localBuilder(requestMessageTemplate).get();
-    requestMessageTemplate.addFields(asList(
+    final FieldTemplate.Builder requestBuilder = FieldTemplate.localBuilder().get();
+    final List<FieldTemplate> requestFields = asList(
         requestBuilder.f(2).name("cardNumber").desc("Payment Card Number").dim("llvar(40)").type("n").build(),
         requestBuilder.f(3).name("processingCode").desc("Processing Code").dim("fixed(6)").type("n").build(),
         requestBuilder.f(4).name("amount").desc("Amount, transaction (cents)").dim("fixed(12)").type("n").build(),
@@ -29,11 +31,15 @@ public class BinaryMessageConfiguration {
         requestBuilder.f(43).name("cardTermName").desc("Card Acceptor Terminal Name").dim("fixed(40)").type("ans").build(),
         requestBuilder.f(48).name("msisdn").desc("Additional Data (MSISDN)").dim("llvar(14)").type("n").build(),
         requestBuilder.f(49).name("currencyCode").desc("Currency Code, Transaction").dim("fixed(3)").type("n").build(),
-        requestBuilder.f(90).name("originalData").desc("Original data elements").dim("lllvar(999)").type("xn").build()));
+        requestBuilder.f(90).name("originalData").desc("Original data elements").dim("lllvar(999)").type("xn").build());
+    final MessageTemplate requestMessageTemplate = MessageTemplate.Builder()
+        .header("ISO015000077")
+        .type(MTI.create(0x0200))
+        .fieldlist(requestFields).build();
 
-    final MessageTemplate reversalMessageTemplate = MessageTemplate.create("ISO015000077", MTI.create(0x0400), BitmapType.BINARY);
-    final FieldTemplate.Builder reversalBuilder = FieldTemplate.localBuilder(reversalMessageTemplate).get();
-    reversalMessageTemplate.addFields(asList(
+
+    final FieldTemplate.Builder reversalBuilder = FieldTemplate.localBuilder().get();
+    final List<FieldTemplate> reversalFields = asList(
         reversalBuilder.f(2).name("cardNumber").desc("Payment Card Number").dim("llvar(2)").type("n").build(),
         reversalBuilder.f(7).name("transDateTime").desc("Transmission Date and Time").dim("fixed(10)").type("date").build(),
         reversalBuilder.f(12).name("transTimeLocal").desc("Time, local transaction").dim("fixed(6)").type("time").build(),
@@ -44,21 +50,29 @@ public class BinaryMessageConfiguration {
         reversalBuilder.f(42).name("cardTermName").desc("Card Acceptor Terminal Name").dim("fixed(40)").type("ans").build(),
         reversalBuilder.f(50).name("msisdn").desc("Additional Data (MSISDN)").dim("lllvar(3)").type("n").build(),
         reversalBuilder.f(53).name("currencyCode2").desc("Currency Code, Transaction").dim("fixed(3)").type("n").build(),
-        reversalBuilder.f(62).name("currencyCode3").desc("Currency Code, Transaction").dim("fixed(3)").type("n").build()));
+        reversalBuilder.f(62).name("currencyCode3").desc("Currency Code, Transaction").dim("fixed(3)").type("n").build());
+    final MessageTemplate reversalMessageTemplate = MessageTemplate.Builder()
+        .header("ISO015000077")
+        .type(MTI.create(0x0400))
+        .fieldlist(reversalFields).build();
 
-    final MessageTemplate txAdviceMessageTemplate = MessageTemplate.create("ISO015000077", MTI.create(0x0220), BitmapType.BINARY);
-    final FieldTemplate.Builder txAdviceBuilder = FieldTemplate.localBuilder(txAdviceMessageTemplate).get();
-    txAdviceMessageTemplate.addFields(asList(
+    final FieldTemplate.Builder txAdviceBuilder = FieldTemplate.localBuilder().get();
+    final List<FieldTemplate> txAdviceFields = asList(
         txAdviceBuilder.f(2).name("cardNumber").desc("Payment Card Number").dim("llvar(20)").type("n").build(),
         txAdviceBuilder.f(7).name("transDateTime").desc("Transmission Date/Time").dim("fixed(10)").type("date").build(),
         txAdviceBuilder.f(22).name("posEntryMode").desc("Date, local transaction").dim("fixed(12)").type("an").build(),
-        txAdviceBuilder.f(63).name("privateResv").desc("Private, reserved").dim("lllvar(120)").type("an").build()));
+        txAdviceBuilder.f(63).name("privateResv").desc("Private, reserved").dim("lllvar(120)").type("an").build());
+    final MessageTemplate txAdviceMessageTemplate = MessageTemplate.Builder()
+        .header("ISO015000077")
+        .type(MTI.create(0x0220))
+        .fieldlist(txAdviceFields).build();
 
     return MessageFactory.Builder()
         .id("binaryMessageSet")
         .contentType(ContentType.BCD)
         .bitmapType(BitmapType.BINARY)
-        .templates(asList(requestMessageTemplate,reversalMessageTemplate,txAdviceMessageTemplate))
+        .charset(CharEncoder.ASCII)
+        .templates(asList(requestMessageTemplate, reversalMessageTemplate, txAdviceMessageTemplate))
         .build();
   }
 

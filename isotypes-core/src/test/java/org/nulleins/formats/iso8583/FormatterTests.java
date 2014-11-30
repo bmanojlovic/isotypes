@@ -12,6 +12,16 @@ public class FormatterTests {
   @Test
   public void registersDefaultFormatters() {
     final TypeFormatters formatters = new TypeFormatters(CharEncoder.ASCII);
-    assertThat(formatters.toString(), is("Registered formatters: [ns, time, xn, an, a, anp, n, as, exdate, date, z, ans]"));
+    assertThat(formatters.hasFormatter("time"), is(true));
+    assertThat(formatters.hasFormatter("xn"), is(true));
+    assertThat(formatters.hasFormatter("an"), is(true));
+    assertThat(formatters.hasFormatter("a"), is(true));
+    assertThat(formatters.hasFormatter("anp"), is(true));
+    assertThat(formatters.hasFormatter("n"), is(true));
+    assertThat(formatters.hasFormatter("as"), is(true));
+    assertThat(formatters.hasFormatter("exdate"), is(true));
+    assertThat(formatters.hasFormatter("date"), is(true));
+    assertThat(formatters.hasFormatter("z"), is(true));
+    assertThat(formatters.hasFormatter("ans"), is(true));
   }
 }

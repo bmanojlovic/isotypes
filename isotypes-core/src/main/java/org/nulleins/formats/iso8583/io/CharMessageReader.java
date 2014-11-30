@@ -9,7 +9,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 
 
-/** MessageReader that reads numeric fields as text (in the defined Charset)
+/** MessageReader that reads numeric fieldlist as text (in the defined Charset)
  * @author phillipsr */
 public class CharMessageReader extends MessageReader {
   /** Instantiate a character message reader

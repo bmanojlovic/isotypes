@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 
 
@@ -72,10 +73,13 @@ public class TestStreamedMessage {
   }
 
   @Test(expected = MessageException.class)
-  public void testParseUnknownMessage()
-      throws ParseException, IOException {
-    factory.parse(
-        new ByteArrayInputStream(Unknown_Request.getBytes()));
+  public void testParseUnknownMessage() throws ParseException, IOException {
+    try {
+      factory.parse (new ByteArrayInputStream (Unknown_Request.getBytes ()));
+    } catch ( final MessageException e) {
+      assertThat (e.getReasons (), contains ("Message type [0990] not defined in this message set"));
+      throw e;
+    }
   }
 
   @Test(expected = MessageException.class)

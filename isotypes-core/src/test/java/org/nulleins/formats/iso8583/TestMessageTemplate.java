@@ -5,6 +5,7 @@ import com.google.common.collect.Sets;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
+import org.nulleins.formats.iso8583.formatters.TypeFormatters;
 import org.nulleins.formats.iso8583.types.Bitmap;
 import org.nulleins.formats.iso8583.types.BitmapType;
 import org.nulleins.formats.iso8583.types.CharEncoder;
@@ -28,7 +29,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.core.Is.is;
 
-/** basic test of programmatic API, creating a message template, adding fields and asserting correct values
+/** basic test of programmatic API, creating a message template, adding fieldlist and asserting correct values
   * @author phillipsr */
 public class TestMessageTemplate {
   private static final byte[] BINARY_BITMAP1 = new byte[]{(byte) 0xf2, 0x20, 0, 0, 0, 0, 0, 1};
@@ -42,24 +43,28 @@ public class TestMessageTemplate {
 
   @Test
   public void testCreateMessageTemplate() throws IOException {
-    final MessageTemplate template = MessageTemplate.create("ISO015000077", PaymentRequest, BitmapType.HEX);
-    assertThat(template.getMessageType(), is(PaymentRequest));
-    assertThat(template.getHeader(), is("ISO015000077"));
-    final FieldTemplate.Builder builder = FieldTemplate.localBuilder(template).get();
+
+    final FieldTemplate.Builder builder = FieldTemplate.localBuilder().get();
     final Map<Integer, FieldTemplate> fields = new HashMap<Integer, FieldTemplate>() {{
       put( 2, builder.f(2).type(FieldType.ALPHANUMSYMBOL).dim("llvar(10)").name("TestField2").desc("Just a Test").build());
       put( 3, builder.f(3).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField3").desc("Processing Code").build());
       put( 4, builder.f(4).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField4").desc("Amount, transaction (PT - cents)").build());
       put( 7, builder.f(7).type(FieldType.DATE).dimension(FIXED10).name("TestField5").desc("Transmission Date and Time").build());
       put(11, builder.f(11).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField6").desc("System Trace Audit Number").build());
-    }};
-    template.setFields(fields);
+      put(64,builder.f(64).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField64").desc("System Trace Audit Number").build());
+      put(66,builder.f(66).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField66").desc("System Trace Audit Number").build());
+      put(128,builder.f(128).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField128").desc("System Trace Audit Number").build());
+      put(130,builder.f(130).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField130").desc("System Trace Audit Number").build());
+      put(192, builder.f(192).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField192").desc("System Trace Audit Number").build());
 
-    template.addField(builder.f(64).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField64").desc("System Trace Audit Number").build());
-    template.addField(builder.f(66).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField66").desc("System Trace Audit Number").build());
-    template.addField(builder.f(128).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField128").desc("System Trace Audit Number").build());
-    template.addField(builder.f(130).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField130").desc("System Trace Audit Number").build());
-    template.addField(builder.f(192).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField192").desc("System Trace Audit Number").build());
+    }};
+    final MessageTemplate template = MessageTemplate.Builder()
+        .header("ISO015000077")
+        .type(PaymentRequest)
+        .fieldmap(fields)
+        .build().with (new TypeFormatters (CharEncoder.ASCII));
+    assertThat(template.getMessageType(), is(PaymentRequest));
+    assertThat(template.getHeader(), is("ISO015000077"));
 
     // E220000000000001 becomes F220000000000001 as secondary bitmap now set
     assertThat(template.getBitmap().asHex(Bitmap.Id.PRIMARY), is("F220000000000001"));
@@ -91,7 +96,8 @@ public class TestMessageTemplate {
         .id("tertiaryTests")
         .contentType(ContentType.TEXT)
         .bitmapType(BitmapType.HEX)
-        .templates(asList(template))
+        .charset (CharEncoder.ASCII)
+        .templates (asList (template))
         .build();
 
     final Map<Integer, Object> testFields = new HashMap<Integer,Object>() {{
@@ -125,24 +131,26 @@ public class TestMessageTemplate {
 
   @Test
   public void testCreateBinaryMessageTemplate() throws IOException {
-    final MessageTemplate template = MessageTemplate.create("ISO015000077", PaymentRequest, BitmapType.BINARY);
-    assertThat(template.getMessageType(), is(PaymentRequest));
-    assertThat(template.getHeader(), is("ISO015000077"));
-    final FieldTemplate.Builder builder = FieldTemplate.localBuilder(template).get();
+
+    final FieldTemplate.Builder builder = FieldTemplate.localBuilder().get();
     final Map<Integer, FieldTemplate> fields = new HashMap<Integer, FieldTemplate>() {{
       put( 2, builder.f(2).type(FieldType.ALPHANUMSYMBOL).dim("llvar(10)").name("TestField2").desc("Just a Test").build());
       put( 3, builder.f(3).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField3").desc("Processing Code").build());
       put( 4, builder.f(4).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField4").desc("Amount, transaction (PT - cents)").build());
       put( 7, builder.f(7).type(FieldType.DATE).dimension(FIXED10).name("TestField5").desc("Transmission Date and Time").build());
       put(11, builder.f(11).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField6").desc("System Trace Audit Number").build());
+      put(64,builder.f(64).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField64").desc("System Trace Audit Number").build());
+      put(66,builder.f(66).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField66").desc("System Trace Audit Number").build());
+      put(128,builder.f(128).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField128").desc("System Trace Audit Number").build());
+      put(130,builder.f(130).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField130").desc("System Trace Audit Number").build());
+      put(192, builder.f(192).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField192").desc("System Trace Audit Number").build());
     }};
-    template.setFields(fields);
 
-    template.addField(builder.f(64).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField64").desc("System Trace Audit Number").build());
-    template.addField(builder.f(66).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField66").desc("System Trace Audit Number").build());
-    template.addField(builder.f(128).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField128").desc("System Trace Audit Number").build());
-    template.addField(builder.f(130).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField130").desc("System Trace Audit Number").build());
-    template.addField(builder.f(192).type(FieldType.NUMERIC).dimension(FIXED6).name("TestField192").desc("System Trace Audit Number").build());
+    final MessageTemplate template = MessageTemplate.Builder()
+        .header("ISO015000077").type(PaymentRequest).fieldmap(fields).build().with (new TypeFormatters (CharEncoder.ASCII));
+
+    assertThat(template.getMessageType(), is(PaymentRequest));
+    assertThat(template.getHeader(), is("ISO015000077"));
 
     // E220000000000001 becomes F220000000000001 as secondary bitmap now set
     assertThat(template.getBitmap().asHex(Bitmap.Id.PRIMARY), is("F220000000000001"));
@@ -174,6 +182,7 @@ public class TestMessageTemplate {
         .id("tertiaryTests")
         .contentType(ContentType.TEXT)
         .bitmapType(BitmapType.BINARY)
+        .charset(CharEncoder.ASCII)
         .templates(asList(template))
         .build();
 
@@ -219,19 +228,21 @@ public class TestMessageTemplate {
 
   @Before
   public void createFactory() {
-    this.factory = new MessageFactory();
-    factory.setId("testFactory");
-    factory.setDescription("Test Message Schema");
-    factory.setBitmapType(BitmapType.HEX);
-    factory.setContentType(ContentType.TEXT);
-    factory.setHeader("ISO015000077");
-    final MessageTemplate template200 = MessageTemplate.create("ISO015000077", MTI.create(0x0200), BitmapType.HEX);
-    template200.addField(FieldTemplate.localBuilder(template200).get().f(2).type(FieldType.NUMERIC).dim("fixed(6)").name("TestField").build());
-    final MessageTemplate template400 = MessageTemplate.create("ISO015000077", MTI.create(0x0400), BitmapType.HEX);
-    template400.addField(FieldTemplate.localBuilder(template400).get().f(2).type(FieldType.ALPHA).dim("fixed(6)").name("TestField").build());
-    template400.addField(FieldTemplate.localBuilder(template400).get().f(3).type(FieldType.NUMERIC).dim("fixed(6)").name("OptField").optional().build());
-    factory.addTemplates(asList(template200, template400));
-    factory.initialize();
+    final FieldTemplate field2 = FieldTemplate.localBuilder().get().f(2).type(FieldType.NUMERIC).dim("fixed(6)").name("TestField").build();
+    final MessageTemplate template200 = MessageTemplate.Builder().header("ISO015000077").type(MTI.create(0x0200)).fieldlist(asList(field2)).build();
+    final List<FieldTemplate> fields400 = asList(
+        FieldTemplate.localBuilder().get().f(2).type(FieldType.ALPHA).dim("fixed(6)").name("TestField").build(),
+        FieldTemplate.localBuilder().get().f(3).type(FieldType.NUMERIC).dim("fixed(6)").name("OptField").optional().build());
+    final MessageTemplate template400 = MessageTemplate.Builder().header("ISO015000077").type(MTI.create(0x0400)).fieldlist(fields400).build();
+    this.factory = MessageFactory.Builder()
+        .id("testFactory")
+        .description("Test Message Schema")
+        .bitmapType(BitmapType.HEX)
+        .contentType(ContentType.TEXT)
+        .header("ISO015000077")
+        .charset(CharEncoder.ASCII)
+        .addTemplate(template200)
+        .addTemplate(template400).build();
   }
 
   @Test
